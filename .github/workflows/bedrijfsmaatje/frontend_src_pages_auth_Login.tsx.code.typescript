@@ -1,0 +1,221 @@
+import React, { useState } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  TextField,
+  FormControlLabel,
+  Checkbox,
+  Link,
+  Grid,
+  Typography,
+  Container,
+  InputAdornment,
+  IconButton,
+  Alert,
+  Paper,
+} from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import { Visibility, VisibilityOff, Email, Lock } from '@mui/icons-material';
+import * as Yup from 'yup';
+import { Formik, Form, Field, FieldProps } from 'formik';
+import { useDispatch } from 'react-redux';
+import { login } from '../../store/slices/authSlice';
+import Logo from '../../components/common/Logo';
+import AuthLayout from '../../layouts/AuthLayout';
+
+interface LoginFormValues {
+  email: string;
+  password: string;
+  rememberMe: boolean;
+}
+
+const Login: React.FC = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  const initialValues: LoginFormValues = {
+    email: '',
+    password: '',
+    rememberMe: false,
+  };
+
+  const validationSchema = Yup.object({
+    email: Yup.string()
+      .email('Ongeldig e-mailadres')
+      .required('E-mailadres is verplicht'),
+    password: Yup.string()
+      .required('Wachtwoord is verplicht'),
+  });
+
+  const handleSubmit = async (values: LoginFormValues, { setSubmitting }: any) => {
+    try {
+      setLoginError(null);
+      // Dispatch login action
+      await dispatch(login({
+        email: values.email,
+        password: values.password,
+        rememberMe: values.rememberMe,
+      }) as any);
+      
+      // Redirect to dashboard on successful login
+      navigate('/dashboard');
+    } catch (error: any) {
+      setLoginError(error.message || 'Inloggen mislukt. Controleer je gegevens en probeer het opnieuw.');
+      setSubmitting(false);
+    }
+  };
+
+  const handleTogglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
+
+  return (
+    <AuthLayout>
+      <Container component="main" maxWidth="sm">
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            borderRadius: 2,
+          }}
+        >
+          <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Logo height={60} />
+            <Typography component="h1" variant="h5" sx={{ mt: 2 }}>
+              Inloggen bij Bedrijfsmaatje
+            </Typography>
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
+              Log in om toegang te krijgen tot je dashboard en je bedrijf te beheren
+            </Typography>
+          </Box>
+
+          {loginError && (
+            <Alert severity="error" sx={{ width: '100%', mb: 3 }}>
+              {loginError}
+            </Alert>
+          )}
+
+          <Formik
+            initialValues={initialValues}
+            validationSchema={validationSchema}
+            onSubmit={handleSubmit}
+          >
+            {({ isSubmitting, touched, errors }) => (
+              <Form style={{ width: '100%' }}>
+                <Field name="email">
+                  {({ field }: FieldProps) => (
+                    <TextField
+                      {...field}
+                      margin="normal"
+                      fullWidth
+                      id="email"
+                      label="E-mailadres"
+                      autoComplete="email"
+                      autoFocus
+                      error={touched.email && Boolean(errors.email)}
+                      helperText={touched.email && errors.email}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Email color="action" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  )}
+                </Field>
+
+                <Field name="password">
+                  {({ field }: FieldProps) => (
+                    <TextField
+                      {...field}
+                      margin="normal"
+                      fullWidth
+                      label="Wachtwoord"
+                      type={showPassword ? 'text' : 'password'}
+                      id="password"
+                      autoComplete="current-password"
+                      error={touched.password && Boolean(errors.password)}
+                      helperText={touched.password && errors.password}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Lock color="action" />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              aria-label="toggle password visibility"
+                              onClick={handleTogglePasswordVisibility}
+                              edge="end"
+                            >
+                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  )}
+                </Field>
+
+                <Field name="rememberMe">
+                  {({ field }: FieldProps) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox 
+                          {...field} 
+                          color="primary" 
+                          checked={field.value} 
+                        />
+                      }
+                      label="Onthoud mij"
+                    />
+                  )}
+                </Field>
+
+                <LoadingButton
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  loading={isSubmitting}
+                  sx={{ mt: 3, mb: 2, py: 1.5 }}
+                >
+                  Inloggen
+                </LoadingButton>
+
+                <Grid container>
+                  <Grid item xs>
+                    <Link component={RouterLink} to="/auth/forgot-password" variant="body2">
+                      Wachtwoord vergeten?
+                    </Link>
+                  </Grid>
+                  <Grid item>
+                    <Link component={RouterLink} to="/auth/register" variant="body2">
+                      {"Nog geen account? Registreer"}
+                    </Link>
+                  </Grid>
+                </Grid>
+              </Form>
+            )}
+          </Formik>
+        </Paper>
+
+        <Box mt={3}>
+          <Typography variant="body2" color="text.secondary" align="center">
+            © {new Date().getFullYear()} Bedrijfsmaatje. Alle rechten voorbehouden.
+          </Typography>
+        </Box>
+      </Container>
+    </AuthLayout>
+  );
+};
+
+export default Login;

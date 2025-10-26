@@ -1,0 +1,293 @@
+import React, { useState } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  TextField,
+  Link,
+  Grid,
+  Typography,
+  Container,
+  InputAdornment,
+  IconButton,
+  Alert,
+  Paper,
+  Stepper,
+  Step,
+  StepLabel,
+  FormControlLabel,
+  Checkbox,
+} from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import {
+  Visibility,
+  VisibilityOff,
+  Email,
+  Lock,
+  Person,
+  Business,
+  Phone,
+} from '@mui/icons-material';
+import * as Yup from 'yup';
+import { Formik, Form, Field, FieldProps } from 'formik';
+import { useDispatch } from 'react-redux';
+import { register } from '../../store/slices/authSlice';
+import Logo from '../../components/common/Logo';
+import AuthLayout from '../../layouts/AuthLayout';
+
+interface AccountFormValues {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  acceptTerms: boolean;
+}
+
+interface ProfileFormValues {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  companyName: string;
+  kvkNumber: string;
+  industry: string;
+}
+
+type RegisterFormValues = AccountFormValues & ProfileFormValues;
+
+const Register: React.FC = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [activeStep, setActiveStep] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
+
+  const steps = ['Account aanmaken', 'Persoonlijke gegevens', 'Bedrijfsgegevens'];
+
+  const initialValues: RegisterFormValues = {
+    email: '',
+    password: '',
+    confirmPassword: '',
+    acceptTerms: false,
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+    companyName: '',
+    kvkNumber: '',
+    industry: '',
+  };
+
+  const accountValidationSchema = Yup.object({
+    email: Yup.string()
+      .email('Ongeldig e-mailadres')
+      .required('E-mailadres is verplicht'),
+    password: Yup.string()
+      .min(8, 'Wachtwoord moet minimaal 8 tekens bevatten')
+      .matches(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+        'Wachtwoord moet minimaal één hoofdletter, één kleine letter, één cijfer en één speciaal teken bevatten'
+      )
+      .required('Wachtwoord is verplicht'),
+    confirmPassword: Yup.string()
+      .oneOf([Yup.ref('password')], 'Wachtwoorden komen niet overeen')
+      .required('Bevestig je wachtwoord'),
+    acceptTerms: Yup.boolean()
+      .oneOf([true], 'Je moet akkoord gaan met de algemene voorwaarden')
+      .required('Je moet akkoord gaan met de algemene voorwaarden'),
+  });
+
+  const profileValidationSchema = Yup.object({
+    firstName: Yup.string().required('Voornaam is verplicht'),
+    lastName: Yup.string().required('Achternaam is verplicht'),
+    phoneNumber: Yup.string().required('Telefoonnummer is verplicht'),
+  });
+
+  const companyValidationSchema = Yup.object({
+    companyName: Yup.string().required('Bedrijfsnaam is verplicht'),
+    kvkNumber: Yup.string().required('KVK-nummer is verplicht'),
+    industry: Yup.string().required('Branche is verplicht'),
+  });
+
+  const getValidationSchema = (step: number) => {
+    switch (step) {
+      case 0:
+        return accountValidationSchema;
+      case 1:
+        return profileValidationSchema;
+      case 2:
+        return companyValidationSchema;
+      default:
+        return Yup.object({});
+    }
+  };
+
+  const handleNext = async (values: RegisterFormValues, { setSubmitting, setTouched }: any) => {
+    try {
+      // Validate current step
+      await getValidationSchema(activeStep).validate(values, { abortEarly: false });
+      
+      if (activeStep === steps.length - 1) {
+        // Final step - submit the form
+        await handleSubmit(values, { setSubmitting });
+      } else {
+        // Move to next step
+        setActiveStep((prevStep) => prevStep + 1);
+        // Reset touched fields for the next step
+        setTouched({});
+      }
+    } catch (error) {
+      // Validation errors are handled by Formik
+      setSubmitting(false);
+    }
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevStep) => prevStep - 1);
+  };
+
+  const handleSubmit = async (values: RegisterFormValues, { setSubmitting }: any) => {
+    try {
+      setRegisterError(null);
+      // Dispatch register action
+      await dispatch(register({
+        email: values.email,
+        password: values.password,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        phoneNumber: values.phoneNumber,
+        companyName: values.companyName,
+        kvkNumber: values.kvkNumber,
+        industry: values.industry,
+      }) as any);
+      
+      // Redirect to dashboard on successful registration
+      navigate('/dashboard');
+    } catch (error: any) {
+      setRegisterError(error.message || 'Registratie mislukt. Probeer het opnieuw.');
+      setSubmitting(false);
+    }
+  };
+
+  const handleTogglePasswordVisibility = (field: 'password' | 'confirmPassword') => {
+    if (field === 'password') {
+      setShowPassword((prev) => !prev);
+    } else {
+      setShowConfirmPassword((prev) => !prev);
+    }
+  };
+
+  const renderStepContent = (step: number, formikProps: any) => {
+    const { touched, errors, values, handleChange, handleBlur } = formikProps;
+    
+    switch (step) {
+      case 0:
+        return (
+          <>
+            <Field name="email">
+              {({ field }: FieldProps) => (
+                <TextField
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  id="email"
+                  label="E-mailadres"
+                  autoComplete="email"
+                  autoFocus
+                  error={touched.email && Boolean(errors.email)}
+                  helperText={touched.email && errors.email}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Email color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            </Field>
+
+            <Field name="password">
+              {({ field }: FieldProps) => (
+                <TextField
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  label="Wachtwoord"
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  autoComplete="new-password"
+                  error={touched.password && Boolean(errors.password)}
+                  helperText={touched.password && errors.password}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Lock color="action" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => handleTogglePasswordVisibility('password')}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            </Field>
+
+            <Field name="confirmPassword">
+              {({ field }: FieldProps) => (
+                <TextField
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  label="Bevestig wachtwoord"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  id="confirmPassword"
+                  autoComplete="new-password"
+                  error={touched.confirmPassword && Boolean(errors.confirmPassword)}
+                  helperText={touched.confirmPassword && errors.confirmPassword}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Lock color="action" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => handleTogglePasswordVisibility('confirmPassword')}
+                          edge="end"
+                        >
+                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            </Field>
+
+            <Field name="acceptTerms">
+              {({ field }: FieldProps) => (
+                <FormControlLabel
+                  control={
+                    <Checkbox 
+                      {...field} 
+                      color="primary" 
+                      checked={field.value} 
+                    />
+                  }
+                  label={
+                    <Typography variant="body2">
+                      Ik ga akkoord met de{' '}
+                      <Link component={RouterLink} to="/terms" variant="body2">
+                        algemene voorwaarden
+                      </Link>{' '}
+                      en{' '}
+                      <Link component={Router

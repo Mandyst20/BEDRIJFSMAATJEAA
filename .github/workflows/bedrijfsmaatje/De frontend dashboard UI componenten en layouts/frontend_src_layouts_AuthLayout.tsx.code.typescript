@@ -1,0 +1,99 @@
+import React from 'react';
+import { Outlet, Navigate } from 'react-router-dom';
+import { Box, Container, Paper, Typography, useTheme } from '@mui/material';
+import { useAppSelector } from '../store';
+import { selectIsAuthenticated } from '../store/slices/authSlice';
+import Logo from '../components/common/Logo';
+
+const AuthLayout: React.FC = () => {
+  const theme = useTheme();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  
+  // Redirect to dashboard if already authenticated
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: theme.palette.background.default,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Background pattern */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 0,
+          opacity: 0.03,
+          backgroundImage: `radial-gradient(${theme.palette.primary.main} 2px, transparent 2px)`,
+          backgroundSize: '40px 40px',
+        }}
+      />
+      
+      {/* Header */}
+      <Box
+        component="header"
+        sx={{
+          py: 3,
+          px: 4,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Logo height={40} />
+          <Typography variant="h5" sx={{ ml: 1.5, fontWeight: 'bold' }}>
+            Bedrijfsmaatje
+          </Typography>
+        </Box>
+      </Box>
+      
+      {/* Main content */}
+      <Container component="main" maxWidth="sm" sx={{ mb: 4, position: 'relative', zIndex: 1 }}>
+        <Paper
+          elevation={3}
+          sx={{
+            p: { xs: 3, sm: 5 },
+            display: 'flex',
+            flexDirection: 'column',
+            borderRadius: 2,
+          }}
+        >
+          <Outlet />
+        </Paper>
+      </Container>
+      
+      {/* Footer */}
+      <Box
+        component="footer"
+        sx={{
+          py: 3,
+          px: 2,
+          mt: 'auto',
+          textAlign: 'center',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          © {new Date().getFullYear()} Bedrijfsmaatje. Alle rechten voorbehouden.
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
+
+export default AuthLayout;

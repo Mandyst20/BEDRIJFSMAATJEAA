@@ -1,0 +1,809 @@
+import React, { useState } from 'react';
+import { Formik, Form, Field, FieldProps, FormikHelpers } from 'formik';
+import * as Yup from 'yup';
+import {
+  Box,
+  Button,
+  TextField,
+  MenuItem,
+  FormControl,
+  FormLabel,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  Checkbox,
+  Switch,
+  InputAdornment,
+  FormHelperText,
+  Grid,
+  Typography,
+  Divider,
+  CircularProgress,
+  Autocomplete,
+  Chip,
+  Paper,
+} from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { nl } from 'date-fns/locale';
+import { CloudUpload } from '@mui/icons-material';
+
+// Field types
+export type FieldType =
+  | 'text'
+  | 'email'
+  | 'password'
+  | 'number'
+  | 'select'
+  | 'multiselect'
+  | 'radio'
+  | 'checkbox'
+  | 'switch'
+  | 'textarea'
+  | 'date'
+  | 'time'
+  | 'datetime'
+  | 'file'
+  | 'hidden'
+  | 'divider'
+  | 'heading';
+
+// Option type for select, multiselect, radio fields
+export interface FieldOption {
+  value: string | number | boolean;
+  label: string;
+  disabled?: boolean;
+}
+
+// Field definition
+export interface FormField {
+  name: string;
+  label?: string;
+  type: FieldType;
+  placeholder?: string;
+  helperText?: string;
+  required?: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
+  options?: FieldOption[];
+  multiline?: boolean;
+  rows?: number;
+  startAdornment?: React.ReactNode;
+  endAdornment?: React.ReactNode;
+  min?: number;
+  max?: number;
+  step?: number;
+  validation?: any;
+  width?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+  accept?: string; // For file inputs
+  multiple?: boolean; // For file inputs
+  autoFocus?: boolean;
+  variant?: 'outlined' | 'filled' | 'standard';
+  size?: 'small' | 'medium';
+  fullWidth?: boolean;
+  dependsOn?: {
+    field: string;
+    value: any;
+    showIf: (value: any) => boolean;
+  };
+  onChange?: (value: any, formikHelpers: any) => void;
+  customRender?: (props: FieldProps) => React.ReactNode;
+}
+
+// Form section
+export interface FormSection {
+  title?: string;
+  description?: string;
+  fields: FormField[];
+}
+
+// Form builder props
+export interface FormBuilderProps {
+  sections: FormSection[];
+  initialValues: Record<string, any>;
+  onSubmit: (values: any, formikHelpers: FormikHelpers<any>) => void | Promise<any>;
+  validationSchema?: Yup.ObjectSchema<any>;
+  submitButtonText?: string;
+  cancelButtonText?: string;
+  resetButtonText?: string;
+  showResetButton?: boolean;
+  showCancelButton?: boolean;
+  isLoading?: boolean;
+  onCancel?: () => void;
+  layout?: 'vertical' | 'horizontal';
+  spacing?: number;
+  dense?: boolean;
+  disabled?: boolean;
+  autoSubmit?: boolean;
+  renderCustomActions?: (formikProps: any) => React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  paperProps?: {
+    elevation?: number;
+    variant?: 'elevation' | 'outlined';
+    square?: boolean;
+  };
+}
+
+const FormBuilder: React.FC<FormBuilderProps> = ({
+  sections,
+  initialValues,
+  onSubmit,
+  validationSchema,
+  submitButtonText = 'Opslaan',
+  cancelButtonText = 'Annuleren',
+  resetButtonText = 'Resetten',
+  showResetButton = false,
+  showCancelButton = false,
+  isLoading = false,
+  onCancel,
+  layout = 'vertical',
+  spacing = 2,
+  dense = false,
+  disabled = false,
+  autoSubmit = false,
+  renderCustomActions,
+  className,
+  style,
+  paperProps = {
+    elevation: 0,
+    variant: 'outlined',
+  },
+}) => {
+  // Build validation schema if not provided
+  const buildValidationSchema = () => {
+    if (validationSchema) {
+      return validationSchema;
+    }
+
+    let schema: any = {};
+
+    // Collect all fields from all sections
+    const allFields = sections.flatMap((section) => section.fields);
+
+    // Build schema based on field definitions
+    allFields.forEach((field) => {
+      if (field.type === 'divider' || field.type === 'heading') {
+        return;
+      }
+
+      let fieldSchema: any = null;
+
+      // Set up base schema based on field type
+      switch (field.type) {
+        case 'email':
+          fieldSchema = Yup.string().email('Ongeldig e-mailadres');
+          break;
+        case 'number':
+          fieldSchema = Yup.number().typeError('Moet een getal zijn');
+          if (field.min !== undefined) fieldSchema = fieldSchema.min(field.min, `Minimaal ${field.min}`);
+          if (field.max !== undefined) fieldSchema = fieldSchema.max(field.max, `Maximaal ${field.max}`);
+          break;
+        case 'date':
+        case 'time':
+        case 'datetime':
+          fieldSchema = Yup.date().typeError('Ongeldige datum');
+          break;
+        case 'file':
+          fieldSchema = Yup.mixed();
+          break;
+        case 'multiselect':
+          fieldSchema = Yup.array();
+          break;
+        default:
+          fieldSchema = Yup.string();
+      }
+
+      // Add required validation if needed
+      if (field.required) {
+        fieldSchema = fieldSchema.required('Dit veld is verplicht');
+      }
+
+      // Add custom validation if provided
+      if (field.validation) {
+        fieldSchema = field.validation(fieldSchema);
+      }
+
+      schema[field.name] = fieldSchema;
+    });
+
+    return Yup.object().shape(schema);
+  };
+
+  // Render field based on its type
+  const renderField = (field: FormField, { field: formikField, form }: FieldProps) => {
+    const { name, label, type, placeholder, helperText, disabled: fieldDisabled, readOnly, options } = field;
+    const error = form.touched[name] && form.errors[name] ? String(form.errors[name]) : '';
+    const isDisabled = disabled || fieldDisabled || isLoading;
+
+    // Check if field should be shown based on dependency
+    if (field.dependsOn) {
+      const dependentValue = form.values[field.dependsOn.field];
+      if (!field.dependsOn.showIf(dependentValue)) {
+        return null;
+      }
+    }
+
+    // Custom render function takes precedence
+    if (field.customRender) {
+      return field.customRender({ field: formikField, form });
+    }
+
+    // Render field based on type
+    switch (type) {
+      case 'text':
+      case 'email':
+      case 'password':
+      case 'number':
+        return (
+          <TextField
+            fullWidth={field.fullWidth !== false}
+            label={label}
+            placeholder={placeholder}
+            type={type}
+            variant={field.variant || 'outlined'}
+            size={field.size || (dense ? 'small' : 'medium')}
+            error={!!error}
+            helperText={error || helperText}
+            disabled={isDisabled}
+            InputProps={{
+              readOnly,
+              startAdornment: field.startAdornment ? (
+                <InputAdornment position="start">{field.startAdornment}</InputAdornment>
+              ) : undefined,
+              endAdornment: field.endAdornment ? (
+                <InputAdornment position="end">{field.endAdornment}</InputAdornment>
+              ) : undefined,
+            }}
+            inputProps={{
+              min: field.min,
+              max: field.max,
+              step: field.step,
+            }}
+            autoFocus={field.autoFocus}
+            {...formikField}
+            onChange={(e) => {
+              formikField.onChange(e);
+              if (field.onChange) {
+                field.onChange(e.target.value, form);
+              }
+              if (autoSubmit) {
+                setTimeout(() => form.submitForm(), 0);
+              }
+            }}
+          />
+        );
+
+      case 'textarea':
+        return (
+          <TextField
+            fullWidth={field.fullWidth !== false}
+            label={label}
+            placeholder={placeholder}
+            multiline
+            rows={field.rows || 4}
+            variant={field.variant || 'outlined'}
+            size={field.size || (dense ? 'small' : 'medium')}
+            error={!!error}
+            helperText={error || helperText}
+            disabled={isDisabled}
+            InputProps={{
+              readOnly,
+            }}
+            {...formikField}
+            onChange={(e) => {
+              formikField.onChange(e);
+              if (field.onChange) {
+                field.onChange(e.target.value, form);
+              }
+              if (autoSubmit) {
+                setTimeout(() => form.submitForm(), 0);
+              }
+            }}
+          />
+        );
+
+      case 'select':
+        return (
+          <TextField
+            select
+            fullWidth={field.fullWidth !== false}
+            label={label}
+            variant={field.variant || 'outlined'}
+            size={field.size || (dense ? 'small' : 'medium')}
+            error={!!error}
+            helperText={error || helperText}
+            disabled={isDisabled}
+            InputProps={{
+              readOnly,
+            }}
+            {...formikField}
+            onChange={(e) => {
+              formikField.onChange(e);
+              if (field.onChange) {
+                field.onChange(e.target.value, form);
+              }
+              if (autoSubmit) {
+                setTimeout(() => form.submitForm(), 0);
+              }
+            }}
+          >
+            {options?.map((option) => (
+              <MenuItem
+                key={String(option.value)}
+                value={option.value}
+                disabled={option.disabled}
+              >
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        );
+
+      case 'multiselect':
+        return (
+          <Autocomplete
+            multiple
+            options={options || []}
+            getOptionLabel={(option) => {
+              if (typeof option === 'string') {
+                const foundOption = options?.find((o) => o.value === option);
+                return foundOption ? foundOption.label : option;
+              }
+              return (option as FieldOption).label;
+            }}
+            value={formikField.value || []}
+            onChange={(_, newValue) => {
+              const values = newValue.map((item) => 
+                typeof item === 'string' ? item : (item as FieldOption).value
+              );
+              form.setFieldValue(name, values);
+              if (field.onChange) {
+                field.onChange(values, form);
+              }
+              if (autoSubmit) {
+                setTimeout(() => form.submitForm(), 0);
+              }
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label={label}
+                placeholder={placeholder}
+                variant={field.variant || 'outlined'}
+                size={field.size || (dense ? 'small' : 'medium')}
+                error={!!error}
+                helperText={error || helperText}
+                fullWidth={field.fullWidth !== false}
+              />
+            )}
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => {
+                const label = typeof option === 'string'
+                  ? options?.find((o) => o.value === option)?.label || option
+                  : (option as FieldOption).label;
+                
+                return (
+                  <Chip
+                    variant="outlined"
+                    label={label}
+                    size="small"
+                    {...getTagProps({ index })}
+                  />
+                );
+              })
+            }
+            disabled={isDisabled}
+          />
+        );
+
+      case 'radio':
+        return (
+          <FormControl 
+            component="fieldset" 
+            error={!!error} 
+            disabled={isDisabled}
+            fullWidth={field.fullWidth !== false}
+          >
+            <FormLabel component="legend">{label}</FormLabel>
+            <RadioGroup
+              row
+              {...formikField}
+              onChange={(e) => {
+                formikField.onChange(e);
+                if (field.onChange) {
+                  field.onChange(e.target.value, form);
+                }
+                if (autoSubmit) {
+                  setTimeout(() => form.submitForm(), 0);
+                }
+              }}
+            >
+              {options?.map((option) => (
+                <FormControlLabel
+                  key={String(option.value)}
+                  value={option.value}
+                  control={<Radio size={dense ? 'small' : 'medium'} />}
+                  label={option.label}
+                  disabled={option.disabled || isDisabled}
+                />
+              ))}
+            </RadioGroup>
+            {(error || helperText) && (
+              <FormHelperText>{error || helperText}</FormHelperText>
+            )}
+          </FormControl>
+        );
+
+      case 'checkbox':
+        return (
+          <FormControl 
+            error={!!error} 
+            disabled={isDisabled}
+            fullWidth={field.fullWidth !== false}
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!formikField.value}
+                  onChange={(e) => {
+                    formikField.onChange(e);
+                    if (field.onChange) {
+                      field.onChange(e.target.checked, form);
+                    }
+                    if (autoSubmit) {
+                      setTimeout(() => form.submitForm(), 0);
+                    }
+                  }}
+                  size={dense ? 'small' : 'medium'}
+                  disabled={isDisabled}
+                />
+              }
+              label={label}
+            />
+            {(error || helperText) && (
+              <FormHelperText>{error || helperText}</FormHelperText>
+            )}
+          </FormControl>
+        );
+
+      case 'switch':
+        return (
+          <FormControl 
+            error={!!error} 
+            disabled={isDisabled}
+            fullWidth={field.fullWidth !== false}
+          >
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={!!formikField.value}
+                  onChange={(e) => {
+                    formikField.onChange(e);
+                    if (field.onChange) {
+                      field.onChange(e.target.checked, form);
+                    }
+                    if (autoSubmit) {
+                      setTimeout(() => form.submitForm(), 0);
+                    }
+                  }}
+                  size={dense ? 'small' : 'medium'}
+                  disabled={isDisabled}
+                />
+              }
+              label={label}
+            />
+            {(error || helperText) && (
+              <FormHelperText>{error || helperText}</FormHelperText>
+            )}
+          </FormControl>
+        );
+
+      case 'date':
+      case 'time':
+      case 'datetime':
+        return (
+          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={nl}>
+            {type === 'date' && (
+              <DatePicker
+                label={label}
+                value={formikField.value || null}
+                onChange={(date) => {
+                  form.setFieldValue(name, date);
+                  if (field.onChange) {
+                    field.onChange(date, form);
+                  }
+                  if (autoSubmit) {
+                    setTimeout(() => form.submitForm(), 0);
+                  }
+                }}
+                slotProps={{
+                  textField: {
+                    variant: field.variant || 'outlined',
+                    size: field.size || (dense ? 'small' : 'medium'),
+                    error: !!error,
+                    helperText: error || helperText,
+                    fullWidth: field.fullWidth !== false,
+                  },
+                }}
+                disabled={isDisabled}
+              />
+            )}
+            {type === 'time' && (
+              <TimePicker
+                label={label}
+                value={formikField.value || null}
+                onChange={(time) => {
+                  form.setFieldValue(name, time);
+                  if (field.onChange) {
+                    field.onChange(time, form);
+                  }
+                  if (autoSubmit) {
+                    setTimeout(() => form.submitForm(), 0);
+                  }
+                }}
+                slotProps={{
+                  textField: {
+                    variant: field.variant || 'outlined',
+                    size: field.size || (dense ? 'small' : 'medium'),
+                    error: !!error,
+                    helperText: error || helperText,
+                    fullWidth: field.fullWidth !== false,
+                  },
+                }}
+                disabled={isDisabled}
+              />
+            )}
+            {type === 'datetime' && (
+              <DateTimePicker
+                label={label}
+                value={formikField.value || null}
+                onChange={(datetime) => {
+                  form.setFieldValue(name, datetime);
+                  if (field.onChange) {
+                    field.onChange(datetime, form);
+                  }
+                  if (autoSubmit) {
+                    setTimeout(() => form.submitForm(), 0);
+                  }
+                }}
+                slotProps={{
+                  textField: {
+                    variant: field.variant || 'outlined',
+                    size: field.size || (dense ? 'small' : 'medium'),
+                    error: !!error,
+                    helperText: error || helperText,
+                    fullWidth: field.fullWidth !== false,
+                  },
+                }}
+                disabled={isDisabled}
+              />
+            )}
+          </LocalizationProvider>
+        );
+
+      case 'file':
+        const [fileNames, setFileNames] = useState<string[]>([]);
+        
+        return (
+          <FormControl 
+            error={!!error} 
+            fullWidth={field.fullWidth !== false}
+            variant="outlined"
+            margin="normal"
+          >
+            <input
+              id={`file-input-${name}`}
+              type="file"
+              accept={field.accept}
+              multiple={field.multiple}
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const files = e.target.files;
+                if (files) {
+                  form.setFieldValue(name, field.multiple ? files : files[0]);
+                  
+                  // Update file names for display
+                  const names = [];
+                  for (let i = 0; i < files.length; i++) {
+                    names.push(files[i].name);
+                  }
+                  setFileNames(names);
+                  
+                  if (field.onChange) {
+                    field.onChange(field.multiple ? files : files[0], form);
+                  }
+                  if (autoSubmit) {
+                    setTimeout(() => form.submitForm(), 0);
+                  }
+                }
+              }}
+              disabled={isDisabled}
+            />
+            
+            <Box sx={{ mb: 1 }}>
+              <FormLabel component="legend">{label}</FormLabel>
+            </Box>
+            
+            <Button
+              variant="outlined"
+              component="label"
+              htmlFor={`file-input-${name}`}
+              startIcon={<CloudUpload />}
+              disabled={isDisabled}
+              fullWidth
+              sx={{ p: 1.5, textTransform: 'none' }}
+            >
+              {fileNames.length > 0 
+                ? field.multiple
+                  ? `${fileNames.length} bestand(en) geselecteerd`
+                  : fileNames[0]
+                : `Bestand${field.multiple ? 'en' : ''} kiezen...`
+              }
+            </Button>
+            
+            {fileNames.length > 0 && field.multiple && (
+              <Box sx={{ mt: 1 }}>
+                {fileNames.map((fileName, index) => (
+                  <Chip
+                    key={index}
+                    label={fileName}
+                    size="small"
+                    onDelete={() => {
+                      const newFileNames = [...fileNames];
+                      newFileNames.splice(index, 1);
+                      setFileNames(newFileNames);
+                      
+                      // Create a new FileList (this is tricky since FileList is read-only)
+                      const dt = new DataTransfer();
+                      const files = form.values[name];
+                      for (let i = 0; i < files.length; i++) {
+                        if (i !== index) {
+                          dt.items.add(files[i]);
+                        }
+                      }
+                      form.setFieldValue(name, dt.files);
+                    }}
+                    sx={{ mr: 0.5, mb: 0.5 }}
+                  />
+                ))}
+              </Box>
+            )}
+            
+            {(error || helperText) && (
+              <FormHelperText>{error || helperText}</FormHelperText>
+            )}
+          </FormControl>
+        );
+
+      case 'hidden':
+        return null;
+
+      case 'divider':
+        return <Divider sx={{ my: 2 }} />;
+
+      case 'heading':
+        return (
+          <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+            {label}
+          </Typography>
+        );
+
+      default:
+        return <div>Onbekend veldtype: {type}</div>;
+    }
+  };
+
+  return (
+    <Formik
+      initialValues={initialValues}
+      validationSchema={buildValidationSchema()}
+      onSubmit={onSubmit}
+      enableReinitialize
+    >
+      {(formikProps) => (
+        <Form className={className} style={style}>
+          {sections.map((section, sectionIndex) => (
+            <Paper
+              key={sectionIndex}
+              elevation={paperProps.elevation}
+              variant={paperProps.variant}
+              square={paperProps.square}
+              sx={{ p: 3, mb: 3 }}
+            >
+              {section.title && (
+                <Typography variant="h5" component="h2" gutterBottom>
+                  {section.title}
+                </Typography>
+              )}
+              
+              {section.description && (
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  {section.description}
+                </Typography>
+              )}
+              
+              <Grid container spacing={spacing}>
+                {section.fields.map((field, fieldIndex) => {
+                  // Skip hidden fields in the grid
+                  if (field.type === 'hidden') {
+                    return (
+                      <Field key={`${sectionIndex}-${fieldIndex}`} name={field.name}>
+                        {(fieldProps: FieldProps) => renderField(field, fieldProps)}
+                      </Field>
+                    );
+                  }
+                  
+                  // For dividers and headings, span the full width
+                  if (field.type === 'divider' || field.type === 'heading') {
+                    return (
+                      <Grid item xs={12} key={`${sectionIndex}-${fieldIndex}`}>
+                        <Field name={field.name || `heading-${fieldIndex}`}>
+                          {(fieldProps: FieldProps) => renderField(field, fieldProps)}
+                        </Field>
+                      </Grid>
+                    );
+                  }
+                  
+                  return (
+                    <Grid 
+                      item 
+                      xs={12} 
+                      sm={layout === 'horizontal' ? field.width || 6 : 12}
+                      key={`${sectionIndex}-${fieldIndex}`}
+                    >
+                      <Field name={field.name}>
+                        {(fieldProps: FieldProps) => renderField(field, fieldProps)}
+                      </Field>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </Paper>
+          ))}
+          
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+            {renderCustomActions && renderCustomActions(formikProps)}
+            
+            {showCancelButton && (
+              <Button
+                variant="outlined"
+                color="inherit"
+                onClick={onCancel}
+                disabled={isLoading}
+              >
+                {cancelButtonText}
+              </Button>
+            )}
+            
+            {showResetButton && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => formikProps.resetForm()}
+                disabled={isLoading || !formikProps.dirty}
+              >
+                {resetButtonText}
+              </Button>
+            )}
+            
+            <Button
+              variant="contained"
+              color="primary"
+              type="submit"
+              disabled={isLoading || !formikProps.dirty || !formikProps.isValid}
+              startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : undefined}
+            >
+              {submitButtonText}
+            </Button>
+          </Box>
+        </Form>
+      )}
+    </Formik>
+  );
+};
+
+export default FormBuilder;

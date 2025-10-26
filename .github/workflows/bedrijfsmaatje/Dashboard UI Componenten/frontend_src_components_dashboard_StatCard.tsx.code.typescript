@@ -1,0 +1,130 @@
+import React from 'react';
+import { Box, Card, CardContent, Typography, SvgIconProps, useTheme } from '@mui/material';
+import { styled } from '@mui/material/styles';
+import { TrendingUp, TrendingDown } from '@mui/icons-material';
+
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  icon: React.ReactElement<SvgIconProps>;
+  color?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | string;
+  change?: number;
+  changeText?: string;
+  subtitle?: string;
+}
+
+const IconWrapper = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderRadius: '50%',
+  padding: theme.spacing(1.5),
+  marginBottom: theme.spacing(2),
+  width: 48,
+  height: 48,
+}));
+
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  icon,
+  color = 'primary',
+  change,
+  changeText,
+  subtitle,
+}) => {
+  const theme = useTheme();
+  
+  // Determine if the change is positive or negative
+  const isPositive = change && change > 0;
+  const isNegative = change && change < 0;
+  
+  // Get color from theme or use custom color
+  const getColor = () => {
+    if (color === 'primary') return theme.palette.primary.main;
+    if (color === 'secondary') return theme.palette.secondary.main;
+    if (color === 'success') return theme.palette.success.main;
+    if (color === 'error') return theme.palette.error.main;
+    if (color === 'warning') return theme.palette.warning.main;
+    if (color === 'info') return theme.palette.info.main;
+    return color; // Custom color
+  };
+  
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <IconWrapper
+          sx={{
+            bgcolor: `${getColor()}15`, // 15% opacity of the color
+            color: getColor(),
+          }}
+        >
+          {React.cloneElement(icon, { fontSize: 'medium' })}
+        </IconWrapper>
+        
+        <Typography variant="h5" component="div" fontWeight="bold">
+          {value}
+        </Typography>
+        
+        <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, mb: 1 }}>
+          <Typography variant="subtitle2" color="text.secondary">
+            {title}
+          </Typography>
+        </Box>
+        
+        {(change !== undefined || changeText) && (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {change !== undefined && (
+              <>
+                {isPositive && (
+                  <TrendingUp
+                    fontSize="small"
+                    sx={{ color: theme.palette.success.main, mr: 0.5 }}
+                  />
+                )}
+                {isNegative && (
+                  <TrendingDown
+                    fontSize="small"
+                    sx={{ color: theme.palette.error.main, mr: 0.5 }}
+                  />
+                )}
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: isPositive
+                      ? theme.palette.success.main
+                      : isNegative
+                      ? theme.palette.error.main
+                      : 'text.secondary',
+                    fontWeight: 'medium',
+                  }}
+                >
+                  {isPositive ? '+' : ''}
+                  {change}%
+                </Typography>
+              </>
+            )}
+            
+            {changeText && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ ml: change !== undefined ? 0.5 : 0 }}
+              >
+                {changeText}
+              </Typography>
+            )}
+          </Box>
+        )}
+        
+        {subtitle && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+            {subtitle}
+          </Typography>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+export default StatCard;

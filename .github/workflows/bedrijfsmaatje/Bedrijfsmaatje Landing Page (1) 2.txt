@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bedrijfsmaatje | Jouw Nederlandse AI Assistent voor MKB</title>
+  <style>
+    :root {
+      --primary-color: #ff6b35;
+      --secondary-color: #004e89;
+      --accent-color: #00a5cf;
+      --background-color: #f7f9fc;
+      --text-color: #333333;
+      --light-text: #6c757d;
+      --card-bg: #ffffff;
+      --border-radius: 8px;
+      --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Nunito', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    
+    header {
+      background-color: #fff;
+      box-shadow: var(--box-shadow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+    
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background-color: var(--primary-color);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    
+    nav ul {
+      display: flex;
+      list-style: none;
+      gap: 30px;
+    }
+    
+    nav a {
+      text-decoration: none;
+      color: var(--text-color);
+      font-weight: 600;
+      transition: color 0.3s;
+    }
+    
+    nav a:hover {
+      color: var(--primary-color);
+    }
+    
+    .cta-button {
+      display: inline-block;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 12px 24px;
+      border-radius: var(--border-radius);
+      text-decoration: none;
+      font-weight: 600;
+      transition: background-color 0.3s;
+    }
+    
+    .cta-button:hover {
+      background-color: #e55a24;
+    }
+    
+    .secondary-button {
+      display: inline-block;
+      background-color: white;
+      color: var(--primary-color);
+      border: 2px solid var(--primary-color);
+      padding: 10px 22px;
+      border-radius: var(--border-radius);
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s;
+      margin-left: 15px;
+    }
+    
+    .secondary-button:hover {
+      background-color: #fff8f5;
+    }
+    
+    .hero {
+      padding: 80px 0 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .hero-content {
+      display: flex;
+      align-items: center;
+      gap: 60px;
+    }
+    
+    .hero-text {
+      flex: 1;
+    }
+    
+    .hero h1 {
+      font-size: 48px;
+      line-height: 1.2;
+      margin-bottom: 20px;
+      color: var(--secondary-color);
+    }
+    
+    .hero h1 span {
+      color: var(--primary-color);
+    }
+    
+    .hero p {
+      font-size: 18px;
+      margin-bottom: 30px;
+      color: var(--light-text);
+    }
+    
+    .hero-image {
+      flex: 1;
+      position: relative;
+    }
+    
+    .hero-image img {
+      width: 100%;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+    
+    .features {
+      padding: 80px 0;
+      background-color: white;
+    }
+    
+    .section-header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+    
+    .section-header h2 {
+      font-size: 36px;
+      color: var(--secondary-color);
+      margin-bottom: 15px;
+    }
+    
+    .section-header p {
+      font-size: 18px;
+      color: var(--light-text);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+    }
+    
+    .feature-card {
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 30px;
+      box-shadow: var(--box-shadow);
+      transition: transform 0.3s;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .feature-icon {
+      width: 60px;
+      height: 60px;
+      background-color: #fff8f5;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      color: var(--primary-color);
+      font-size: 24px;
+    }
+    
+    .feature-card h3 {
+      font-size: 22px;
+      margin-bottom: 15px;
+      color: var(--secondary-color);
+    }
+    
+    .feature-card p {
+      color: var(--light-text);
+    }
+    
+    .how-it-works {
+      padding: 80px 0;
+      background-color: var(--background-color);
+    }
+    
+    .steps {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 50px;
+    }
+    
+    .step {
+      flex: 1;
+      text-align: center;
+      padding: 0 20px;
+      position: relative;
+    }
+    
+    .step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      top: 40px;
+      right: -30px;
+      width: 60px;
+      height: 2px;
+      background-color: var(--accent-color);
+    }
+    
+    .step-number {
+      width: 80px;
+      height: 80px;
+      background-color: var(--accent-color);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: bold;
+      margin: 0 auto 25px;
+    }
+    
+    .step h3 {
+      font-size: 22px;
+      margin-bottom: 15px;
+      color: var(--secondary-color);
+    }
+    
+    .step p {
+      color: var(--light-text);
+    }
+    
+    .use-cases {
+      padding: 80px 0;
+      background-color: white;
+    }
+    
+    .use-case-tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 40px;
+      border-bottom: 1px solid #e9ecef;
+      padding-bottom: 15px;
+    }
+    
+    .tab-button {
+      background: none;
+      border: none;
+      padding: 10px 20px;
+      margin: 0 10px;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--light-text);
+      cursor: pointer;
+      transition: color 0.3s;
+      position: relative;
+    }
+    
+    .tab-button.active {
+      color: var(--primary-color);
+    }
+    
+    .tab-button.active::after {
+      content: "";
+      position: absolute;
+      bottom: -16px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background-color: var(--primary-color);
+    }
+    
+    .use-case-content {
+      display: flex;
+      align-items: center;
+      gap: 60px;
+    }
+    
+    .use-case-image {
+      flex: 1;
+    }
+    
+    .use-case-image img {
+      width: 100%;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+    
+    .use-case-text {
+      flex: 1;
+    }
+    
+    .use-case-text h3 {
+      font-size: 28px;
+      margin-bottom: 20px;
+      color: var(--secondary-color);
+    }
+    
+    .use-case-text p {
+      margin-bottom: 20px;
+      color: var(--light-text);
+    }
+    
+    .use-case-text ul {
+      list-style: none;
+      margin-bottom: 25px;
+    }
+    
+    .use-case-text li {
+      margin-bottom: 10px;
+      padding-left: 25px;
+      position: relative;
+    }
+    
+    .use-case-text li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--accent-color);
+      font-weight: bold;
+    }
+    
+    .pricing {
+      padding: 80px 0;
+      background-color: var(--background-color);
+    }
+    
+    .pricing-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+    
+    .toggle-label {
+      font-weight: 600;
+      color: var(--light-text);
+    }
+    
+    .toggle-label.active {
+      color: var(--secondary-color);
+    }
+    
+    .toggle-switch {
+      width: 60px;
+      height: 30px;
+      background-color: var(--accent-color);
+      border-radius: 15px;
+      margin: 0 15px;
+      position: relative;
+      cursor: pointer;
+    }
+    
+    .toggle-switch::after {
+      content: "";
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      background-color: white;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.3s;
+    }
+    
+    .toggle-switch.yearly::after {
+      transform: translateX(30px);
+    }
+    
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+    }
+    
+    .pricing-card {
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 40px 30px;
+      box-shadow: var(--box-shadow);
+      text-align: center;
+      transition: transform 0.3s;
+    }
+    
+    .pricing-card:hover {
+      transform: translateY(-10px);
+    }
+    
+    .pricing-card.popular {
+      border: 2px solid var(--primary-color);
+      position: relative;
+    }
+    
+    .popular-badge {
+      position: absolute;
+      top: -15px;
+      right: 30px;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .pricing-card h3 {
+      font-size: 24px;
+      margin-bottom: 15px;
+      color: var(--secondary-color);
+    }
+    
+    .price {
+      font-size: 48px;
+      font-weight: bold;
+      color: var(--text-color);
+      margin-bottom: 20px;
+    }
+    
+    .price span {
+      font-size: 16px;
+      font-weight: normal;
+      color: var(--light-text);
+    }
+    
+    .pricing-features {
+      list-style: none;
+      margin-bottom: 30px;
+    }
+    
+    .pricing-features li {
+      margin-bottom: 10px;
+      color: var(--light-text);
+    }
+    
+    .testimonials {
+      padding: 80px 0;
+      background-color: white;
+    }
+    
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+    }
+    
+    .testimonial-card {
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 30px;
+      box-shadow: var(--box-shadow);
+    }
+    
+    .testimonial-text {
+      font-style: italic;
+      margin-bottom: 20px;
+      color: var(--light-text);
+    }
+    
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+    }
+    
+    .author-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: #e9ecef;
+      margin-right: 15px;
+    }
+    
+    .author-info h4 {
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+    
+    .author-info p {
+      font-size: 14px;
+      color: var(--light-text);
+    }
+    
+    .cta-section {
+      padding: 80px 0;
+      background-color: var(--secondary-color);
+      color: white;
+      text-align: center;
+    }
+    
+    .cta-section h2 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+    
+    .cta-section p {
+      font-size: 18px;
+      max-width: 700px;
+      margin: 0 auto 30px;
+      opacity: 0.9;
+    }
+    
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+    
+    .cta-primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .cta-secondary {
+      background-color: transparent;
+      color: white;
+      border: 2px solid white;
+    }
+    
+    .cta-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    footer {
+      background-color: #1e293b;
+      color: #f8fafc;
+      padding: 60px 0 30px;
+    }
+    
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr repeat(3, 1fr);
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+    
+    .footer-logo {
+      font-size: 24px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .footer-about p {
+      color: #cbd5e1;
+      margin-bottom: 20px;
+    }
+    
+    .social-links {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .social-link {
+      width: 36px;
+      height: 36px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      transition: background-color 0.3s;
+    }
+    
+    .social-link:hover {
+      background-color: var(--primary-color);
+    }
+    
+    .footer-column h3 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: white;
+    }
+    
+    .footer-column ul {
+      list-style: none;
+    }
+    
+    .footer-column ul li {
+      margin-bottom: 10px;
+    }
+    
+    .footer-column a {
+      color: #cbd5e1;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    
+    .footer-column a:hover {
+      color: white;
+    }
+    
+    .copyright {
+      text-align: center;
+      padding-top: 30px;
+      border-top: 1px solid #334155;
+      color: #94a3b8;
+    }
+    
+    @media (max-width: 992px) {
+      .features-grid,
+      .pricing-grid,
+      .testimonial-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .hero-content,
+      .use-case-content {
+        flex-direction: column;
+      }
+      
+      .footer-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .header-container {
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      nav ul {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+      }
+      
+      .hero h1 {
+        font-size: 36px;
+      }
+      
+      .features-grid,
+      .pricing-grid,
+      .testimonial-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .steps {
+        flex-direction: column;
+        gap: 40px;
+      }
+      
+      .step:not(:last-child)::after {
+        display: none;
+      }
+      
+      .cta-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-container">
+      <div class="logo">
+        <div class="logo-icon">B</div>
+        Bedrijfsmaatje
+      </div>
+      <nav>
+        <ul>
+          <li><a href="#features">Functies</a></li>
+          <li><a href="#how-it-works">Hoe het werkt</a></li>
+          <li><a href="#use-cases">Toepassingen</a></li>
+          <li><a href="#pricing">Prijzen</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  
+  <section class="hero">
+    <div class="container hero-content">
+      <div class="hero-text">
+        <h1>Jouw Nederlandse <span>AI Assistent</span> voor het MKB</h1>
+        <p>Bedrijfsmaatje helpt Nederlandse ondernemers tijd te besparen met slimme AI-automatisering, speciaal ontwikkeld voor de Nederlandse markt en volledig in het Nederlands.</p>
+        <div>
+          <a href="#pricing" class="cta-button">Start Gratis Proefperiode</a>
+          <a href="#demo" class="secondary-button">Bekijk Demo</a>
+        </div>
+      </div>
+      <div class="hero-image">
+        <img src="https://images.unsplash.com/photo-1553877522-43269d4ea984?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Bedrijfsmaatje AI Assistant Dashboard">
+      </div>
+    </div>
+  </section>
+  
+  <section id="features" class="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Alles wat je nodig hebt in één AI-assistent</h2>
+        <p>Bedrijfsmaatje combineert meerdere AI-tools in één platform, speciaal voor Nederlandse ondernemers.</p>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">📝</div>
+          <h3>Automatische administratie</h3>
+          <p>Verwerk facturen, bonnetjes en andere administratie automatisch met AI die Nederlandse boekhoudregels begrijpt.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <h3>Nederlandse klantenservice</h3>
+          <p>Laat AI je klanten helpen met vragen, afspraken en support - volledig in natuurlijk Nederlands.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Slimme rapportages</h3>
+          <p>Krijg automatisch inzichten in je bedrijfsprestaties met rapportages die je echt begrijpt.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📱</div>
+          <h3>Social media beheer</h3>
+          <p>Genereer en plan content voor je sociale media die aansluit bij Nederlandse trends en cultuur.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📅</div>
+          <h3>Slimme planning</h3>
+          <p>Plan afspraken, vergaderingen en taken met een AI die rekening houdt met Nederlandse feestdagen en gewoontes.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>AVG-compliant</h3>
+          <p>Al je gegevens worden verwerkt volgens Nederlandse privacywetgeving en blijven binnen de EU.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <section id="how-it-works" class="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <h2>Hoe werkt Bedrijfsmaatje?</h2>
+        <p>In slechts drie eenvoudige stappen heb je je eigen AI-assistent die je bedrijf helpt groeien.</p>
+      </div>
+      
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Maak een account aan</h3>
+          <p>Registreer je in minder dan 2 minuten en kies welke modules je wilt activeren.</p>
+        </div>
+        
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>Koppel je systemen</h3>
+          <p>Verbind eenvoudig je bestaande tools zoals boekhouding, CRM of agenda.</p>
+        </div>
+        
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Laat de AI werken</h3>
+          <p>Bedrijfsmaatje leert van jouw bedrijf en neemt steeds meer taken over.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <section id="use-cases" class="use-cases">
+    <div class="container">
+      <div class="section-header">
+        <h2>Ontdek wat Bedrijfsmaatje voor jou kan doen</h2>
+        <p>Bekijk hoe verschillende ondernemers Bedrijfsmaatje gebruiken om tijd te besparen.</p>
+      </div>
+      
+      <div class="use-case-tabs">
+        <button class="tab-button active">Horeca</button>
+        <button class="tab-button">Retail</button>
+        <button class="tab-button">ZZP'ers</button>
+        <button class="tab-button">Dienstverlening</button>
+      </div>
+      
+      <div class="use-case-content">
+        <div class="use-case-image">
+          <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Horecaondernemer gebruikt Bedrijfsmaatje">
+        </div>
+        
+        <div class="use-case-text">
+          <h3>Horeca-ondernemers besparen 10+ uur per week</h3>
+          <p>Restauranteigenaren en caféhouders gebruiken Bedrijfsmaatje om hun dagelijkse administratie te automatiseren, personeelsroosters te optimaliseren en voorraad bij te houden.</p>
+          
+          <ul>
+            <li>Automatische verwerking van kassabonnen en facturen</li>
+            <li>Slimme personeelsplanning op basis van drukte</li>
+            <li>Voorraadoptimalisatie en automatische bestellingen</li>
+            <li>Klantcommunicatie en reserveringsbeheer</li>
+          </ul>
+          
+          <a href="#demo-horeca" class="cta-button">Bekijk Horeca Demo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <section id="pricing" class="pricing">
+    <div class="container">
+      <div class="section-header">
+        <h2>Betaalbare plannen voor elke ondernemer</h2>
+        <p>Kies het plan dat bij jouw bedrijf past en begin direct met tijdbesparing.</p>
+      </div>
+      
+      <div class="pricing-toggle">
+        <span class="toggle-label active">Maandelijks</span>
+        <div class="toggle-switch"></div>
+        <span class="toggle-label">Jaarlijks <small>(2 maanden gratis)</small></span>
+      </div>
+      
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <h3>Starter</h3>
+          <div class="price">€29<span>/maand</span></div>
+          <ul class="pricing-features">
+            <li>1 AI-module naar keuze</li>
+            <li>250 AI-acties per maand</li>
+            <li>Email support</li>
+            <li>Basis integraties</li>
+            <li>Nederlandse taalondersteuning</li>
+          </ul>
+          <a href="#signup" class="cta-button">Start Gratis Proefperiode</a>
+        </div>
+        
+        <div class="pricing-card popular">
+          <div class="popular-badge">Meest gekozen</div>
+          <h3>Groei</h3>
+          <div class="price">€79<span>/maand</span></div>
+          <ul class="pricing-features">
+            <li>3 AI-modules naar keuze</li>
+            <li>1000 AI-acties per maand</li>
+            <li>Prioriteit support</li>
+            <li>Alle integraties</li>
+            <li>Nederlandse taalondersteuning</li>
+            <li>Aangepaste workflows</li>
+          </ul>
+          <a href="#signup" class="cta-button">Start Gratis Proefperiode</a>
+        </div>
+        
+        <div class="pricing-card">
+          <h3>Zakelijk</h3>
+          <div class="price">€199<span>/maand</span></div>
+          <ul class="pricing-features">
+            <li>Alle AI-modules</li>
+            <li>Onbeperkt AI-acties</li>
+            <li>Dedicated accountmanager</li>
+            <li>Premium integraties</li>
+            <li>Nederlandse taalondersteuning</li>
+            <li>Aangepaste workflows</li>
+            <li>Multi-user toegang</li>
+            <li>

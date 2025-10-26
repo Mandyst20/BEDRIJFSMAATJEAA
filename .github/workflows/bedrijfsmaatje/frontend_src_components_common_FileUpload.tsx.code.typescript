@@ -1,0 +1,124 @@
+import React, { useState, useRef } from 'react';
+import {
+  Box,
+  Button,
+  Typography,
+  LinearProgress,
+  Paper,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  Tooltip,
+  CircularProgress,
+  useTheme,
+} from '@mui/material';
+import {
+  CloudUpload,
+  InsertDriveFile,
+  Delete,
+  Download,
+  Visibility,
+  Image,
+  PictureAsPdf,
+  Description,
+  VideoFile,
+  AudioFile,
+} from '@mui/icons-material';
+
+export interface FileInfo {
+  id?: string;
+  name: string;
+  size: number;
+  type: string;
+  url?: string;
+  file?: File;
+  uploadProgress?: number;
+  isUploading?: boolean;
+  isError?: boolean;
+  errorMessage?: string;
+  uploadedAt?: string;
+  createdAt?: string;
+}
+
+interface FileUploadProps {
+  files: FileInfo[];
+  onUpload: (files: File[]) => void;
+  onDelete?: (file: FileInfo) => void;
+  onDownload?: (file: FileInfo) => void;
+  onView?: (file: FileInfo) => void;
+  accept?: string;
+  multiple?: boolean;
+  maxSize?: number; // in bytes
+  maxFiles?: number;
+  disabled?: boolean;
+  showFileList?: boolean;
+  uploadButtonText?: string;
+  dropzoneText?: string;
+  variant?: 'basic' | 'dropzone' | 'button';
+}
+
+const bytesToSize = (bytes: number): string => {
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  if (bytes === 0) return '0 Byte';
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${Math.round(bytes / Math.pow(1024, i))} ${sizes[i]}`;
+};
+
+const getFileIcon = (fileType: string) => {
+  if (fileType.includes('image')) return <Image />;
+  if (fileType.includes('pdf')) return <PictureAsPdf />;
+  if (fileType.includes('video')) return <VideoFile />;
+  if (fileType.includes('audio')) return <AudioFile />;
+  return <InsertDriveFile />;
+};
+
+const FileUpload: React.FC<FileUploadProps> = ({
+  files,
+  onUpload,
+  onDelete,
+  onDownload,
+  onView,
+  accept,
+  multiple = false,
+  maxSize,
+  maxFiles,
+  disabled = false,
+  showFileList = true,
+  uploadButtonText = 'Bestand uploaden',
+  dropzoneText = 'Sleep bestanden hierheen of klik om te uploaden',
+  variant = 'basic',
+}) => {
+  const theme = useTheme();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragError, setDragError] = useState<string | null>(null);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const selectedFiles = Array.from(event.target.files);
+      validateAndUploadFiles(selectedFiles);
+    }
+    // Reset the input value so the same file can be uploaded again if needed
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const validateAndUploadFiles = (selectedFiles: File[]) => {
+    // Check max files limit
+    if (maxFiles && files.length + selectedFiles.length > maxFiles) {
+      alert(`Je kunt maximaal ${maxFiles} bestanden uploaden.`);
+      return;
+    }
+
+    let validFiles: File[] = [];
+    let errors: string[] = [];
+
+    selectedFiles.forEach(file => {
+      // Check file type
+      if (accept) {
+        const acceptTypes = accept.split(',').map(type => type.trim());
+        const fileType = file.type;
+        const fileExtension = `.${file.name.

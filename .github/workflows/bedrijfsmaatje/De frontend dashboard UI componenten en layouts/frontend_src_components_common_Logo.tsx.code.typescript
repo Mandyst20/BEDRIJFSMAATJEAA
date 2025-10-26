@@ -1,0 +1,34 @@
+import React from 'react';
+import { SvgIcon, SvgIconProps } from '@mui/material';
+
+interface LogoProps extends SvgIconProps {
+  height?: number;
+}
+
+const Logo: React.FC<LogoProps> = ({ height = 24, ...props }) => {
+  const width = height * 1.2; // Maintain aspect ratio
+  
+  return (
+    <SvgIcon
+      {...props}
+      viewBox="0 0 120 100"
+      sx={{
+        width,
+        height,
+        ...props.sx,
+      }}
+    >
+      {/* Simplified logo design - replace with your actual logo SVG */}
+      <path
+        d="M60 10C32.4 10 10 32.4 10 60s22.4 50 50 50 50-22.4 50-50S87.6 10 60 10zm0 90c-22.1 0-40-17.9-40-40s17.9-40 40-40 40 17.9 40 40-17.9 40-40 40z"
+        fill="currentColor"
+      />
+      <path
+        d="M80 45H65V30c0-2.8-2.2-5-5-5s-5 2.2-5 5v15H40c-2.8 0-5 2.2-5 5s2.2 5 5 5h15v15c0 2.8 2.2 5 5 5s5-2.2 5-5V55h15c2.8 0 5-2.2 5-5s-2.2-5-5-5z"
+        fill="currentColor"
+      />
+    </SvgIcon>
+  );
+};
+
+export default Logo;

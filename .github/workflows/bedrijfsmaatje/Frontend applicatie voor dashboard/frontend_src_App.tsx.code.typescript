@@ -1,0 +1,105 @@
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useAppDispatch, useAppSelector } from './store';
+import { selectIsAuthenticated, selectAuth } from './store/slices/authSlice';
+import { fetchCurrentUser } from './store/slices/userSlice';
+import { getTheme } from './theme';
+import { selectUiThemeMode } from './store/slices/uiSlice';
+
+// Layouts
+import DashboardLayout from './layouts/DashboardLayout';
+import AuthLayout from './layouts/AuthLayout';
+
+// Auth Pages
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import VerifyEmailPage from './pages/auth/VerifyEmailPage';
+
+// Dashboard Pages
+import DashboardHome from './pages/dashboard/DashboardHome';
+import ProfilePage from './pages/dashboard/ProfilePage';
+import SettingsPage from './pages/dashboard/SettingsPage';
+import SubscriptionPage from './pages/dashboard/SubscriptionPage';
+import DocumentsPage from './pages/dashboard/DocumentsPage';
+import DocumentDetailPage from './pages/dashboard/DocumentDetailPage';
+import TasksPage from './pages/dashboard/TasksPage';
+import TeamPage from './pages/dashboard/TeamPage';
+import IntegrationsPage from './pages/dashboard/IntegrationsPage';
+import AnalyticsPage from './pages/dashboard/AnalyticsPage';
+import HelpPage from './pages/dashboard/HelpPage';
+
+// Error Pages
+import NotFoundPage from './pages/errors/NotFoundPage';
+
+// Protected Route Component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+const App: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const { token } = useAppSelector(selectAuth);
+  const themeMode = useAppSelector(selectUiThemeMode);
+  const theme = getTheme(themeMode);
+  
+  // Fetch user data if authenticated
+  useEffect(() => {
+    if (token) {
+      dispatch(fetchCurrentUser());
+    }
+  }, [dispatch, token]);
+  
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={themeMode === 'dark' ? 'dark' : 'light'}
+      />
+      <Router>
+        <Routes>
+          {/* Auth Routes */}
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+          </Route>
+          
+          {/* Dashboard Routes */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardHome />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/subscription" element={<SubscriptionPage />} />
+            <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/documents/:id" element={<DocumentDetailPage />} />
+            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/team" element={<Team

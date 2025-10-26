@@ -1,0 +1,561 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  Paper,
+  Checkbox,
+  IconButton,
+  Tooltip,
+  TextField,
+  InputAdornment,
+  Chip,
+  Menu,
+  MenuItem,
+  Typography,
+  LinearProgress,
+  useTheme,
+} from '@mui/material';
+import {
+  Search,
+  FilterList,
+  MoreVert,
+  Delete,
+  Edit,
+  Visibility,
+  Download,
+  Share,
+} from '@mui/icons-material';
+
+// Define column interface
+export interface Column<T> {
+  id: keyof T | 'actions';
+  label: string;
+  minWidth?: number;
+  maxWidth?: number;
+  align?: 'left' | 'right' | 'center';
+  format?: (value: any, row: T) => React.ReactNode;
+  sortable?: boolean;
+  filterable?: boolean;
+}
+
+// Define props interface
+interface DataTableProps<T> {
+  columns: Column<T>[];
+  data: T[];
+  idField: keyof T;
+  title?: string;
+  loading?: boolean;
+  selectable?: boolean;
+  actions?: {
+    view?: boolean;
+    edit?: boolean;
+    delete?: boolean;
+    download?: boolean;
+    share?: boolean;
+    custom?: Array<{
+      icon: React.ReactNode;
+      tooltip: string;
+      onClick: (row: T) => void;
+    }>;
+  };
+  onRowClick?: (row: T) => void;
+  onSelectionChange?: (selectedIds: Array<T[keyof T]>) => void;
+  onViewClick?: (row: T) => void;
+  onEditClick?: (row: T) => void;
+  onDeleteClick?: (row: T) => void;
+  onDownloadClick?: (row: T) => void;
+  onShareClick?: (row: T) => void;
+  emptyStateMessage?: string;
+}
+
+// Function to get cell value
+function getCellValue<T>(row: T, columnId: keyof T | 'actions'): any {
+  if (columnId === 'actions') return null;
+  return row[columnId];
+}
+
+// Define the DataTable component
+function DataTable<T>({
+  columns,
+  data,
+  idField,
+  title,
+  loading = false,
+  selectable = false,
+  actions = {
+    view: false,
+    edit: false,
+    delete: false,
+    download: false,
+    share: false,
+    custom: [],
+  },
+  onRowClick,
+  onSelectionChange,
+  onViewClick,
+  onEditClick,
+  onDeleteClick,
+  onDownloadClick,
+  onShareClick,
+  emptyStateMessage = 'Geen gegevens beschikbaar',
+}: DataTableProps<T>) {
+  const theme = useTheme();
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [orderBy, setOrderBy] = useState<keyof T | ''>('');
+  const [order, setOrder] = useState<'asc' | 'desc'>('asc');
+  const [selected, setSelected] = useState<Array<T[keyof T]>>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterMenuAnchorEl, setFilterMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [actionMenuAnchorEl, setActionMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [actionRow, setActionRow] = useState<T | null>(null);
+  
+  // Reset selection when data changes
+  useEffect(() => {
+    setSelected([]);
+  }, [data]);
+  
+  // Handle sort request
+  const handleRequestSort = (property: keyof T) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+  
+  // Handle click on a row checkbox
+  const handleClick = (event: React.MouseEvent<unknown>, id: T[keyof T]) => {
+    event.stopPropagation();
+    
+    const selectedIndex = selected.indexOf(id);
+    let newSelected: Array<T[keyof T]> = [];
+    
+    if (selectedIndex === -1) {
+      newSelected = [...selected, id];
+    } else {
+      newSelected = selected.filter((item) => item !== id);
+    }
+    
+    setSelected(newSelected);
+    if (onSelectionChange) {
+      onSelectionChange(newSelected);
+    }
+  };
+  
+  // Handle click on the header checkbox
+  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const newSelected = filteredData.map((n) => n[idField]);
+      setSelected(newSelected);
+      if (onSelectionChange) {
+        onSelectionChange(newSelected);
+      }
+    } else {
+      setSelected([]);
+      if (onSelectionChange) {
+        onSelectionChange([]);
+      }
+    }
+  };
+  
+  // Handle page change
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+  
+  // Handle rows per page change
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+  
+  // Handle search term change
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setPage(0);
+  };
+  
+  // Handle filter menu open
+  const handleFilterMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setFilterMenuAnchorEl(event.currentTarget);
+  };
+  
+  // Handle filter menu close
+  const handleFilterMenuClose = () => {
+    setFilterMenuAnchorEl(null);
+  };
+  
+  // Handle action menu open
+  const handleActionMenuOpen = (event: React.MouseEvent<HTMLElement>, row: T) => {
+    event.stopPropagation();
+    setActionMenuAnchorEl(event.currentTarget);
+    setActionRow(row);
+  };
+  
+  // Handle action menu close
+  const handleActionMenuClose = () => {
+    setActionMenuAnchorEl(null);
+    setActionRow(null);
+  };
+  
+  // Handle action click
+  const handleActionClick = (action: 'view' | 'edit' | 'delete' | 'download' | 'share') => {
+    if (!actionRow) return;
+    
+    switch (action) {
+      case 'view':
+        if (onViewClick) onViewClick(actionRow);
+        break;
+      case 'edit':
+        if (onEditClick) onEditClick(actionRow);
+        break;
+      case 'delete':
+        if (onDeleteClick) onDeleteClick(actionRow);
+        break;
+      case 'download':
+        if (onDownloadClick) onDownloadClick(actionRow);
+        break;
+      case 'share':
+        if (onShareClick) onShareClick(actionRow);
+        break;
+    }
+    
+    handleActionMenuClose();
+  };
+  
+  // Check if a row is selected
+  const isSelected = (id: T[keyof T]) => selected.indexOf(id) !== -1;
+  
+  // Filter data based on search term
+  const filteredData = data.filter((row) => {
+    if (!searchTerm) return true;
+    
+    // Search in all columns
+    return columns.some((column) => {
+      if (column.id === 'actions') return false;
+      
+      const value = getCellValue(row, column.id);
+      if (value == null) return false;
+      
+      return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+    });
+  });
+  
+  // Sort data
+  const sortedData = React.useMemo(() => {
+    if (!orderBy) return filteredData;
+    
+    return [...filteredData].sort((a, b) => {
+      const aValue = getCellValue(a, orderBy as keyof T);
+      const bValue = getCellValue(b, orderBy as keyof T);
+      
+      if (aValue == null) return order === 'asc' ? -1 : 1;
+      if (bValue == null) return order === 'asc' ? 1 : -1;
+      
+      if (aValue < bValue) return order === 'asc' ? -1 : 1;
+      if (aValue > bValue) return order === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredData, orderBy, order]);
+  
+  // Paginate data
+  const paginatedData = sortedData.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+  
+  // Check if we should show actions column
+  const showActionsColumn =
+    actions.view ||
+    actions.edit ||
+    actions.delete ||
+    actions.download ||
+    actions.share ||
+    (actions.custom && actions.custom.length > 0);
+  
+  return (
+    <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+      {/* Table header with title, search and filters */}
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {title && (
+          <Typography variant="h6" component="div">
+            {title}
+          </Typography>
+        )}
+        
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <TextField
+            size="small"
+            placeholder="Zoeken..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          
+          <Tooltip title="Filters">
+            <IconButton onClick={handleFilterMenuOpen}>
+              <FilterList />
+            </IconButton>
+          </Tooltip>
+          
+          <Menu
+            anchorEl={filterMenuAnchorEl}
+            open={Boolean(filterMenuAnchorEl)}
+            onClose={handleFilterMenuClose}
+          >
+            {columns
+              .filter((column) => column.filterable !== false)
+              .map((column) => (
+                <MenuItem key={String(column.id)} onClick={handleFilterMenuClose}>
+                  {column.label}
+                </MenuItem>
+              ))}
+          </Menu>
+        </Box>
+      </Box>
+      
+      {/* Loading indicator */}
+      {loading && <LinearProgress />}
+      
+      <TableContainer>
+        <Table stickyHeader aria-label={title || 'data table'}>
+          <TableHead>
+            <TableRow>
+              {/* Checkbox column */}
+              {selectable && (
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    indeterminate={selected.length > 0 && selected.length < filteredData.length}
+                    checked={filteredData.length > 0 && selected.length === filteredData.length}
+                    onChange={handleSelectAllClick}
+                    inputProps={{ 'aria-label': 'select all' }}
+                  />
+                </TableCell>
+              )}
+              
+              {/* Data columns */}
+              {columns.map((column) => (
+                <TableCell
+                  key={String(column.id)}
+                  align={column.align || 'left'}
+                  style={{
+                    minWidth: column.minWidth,
+                    maxWidth: column.maxWidth,
+                  }}
+                >
+                  {column.sortable !== false && column.id !== 'actions' ? (
+                    <TableSortLabel
+                      active={orderBy === column.id}
+                      direction={orderBy === column.id ? order : 'asc'}
+                      onClick={() => handleRequestSort(column.id as keyof T)}
+                    >
+                      {column.label}
+                    </TableSortLabel>
+                  ) : (
+                    column.label
+                  )}
+                </TableCell>
+              ))}
+              
+              {/* Actions column */}
+              {showActionsColumn && !columns.some((col) => col.id === 'actions') && (
+                <TableCell align="right">Acties</TableCell>
+              )}
+            </TableRow>
+          </TableHead>
+          
+          <TableBody>
+            {paginatedData.length > 0 ? (
+              paginatedData.map((row, index) => {
+                const isItemSelected = isSelected(row[idField]);
+                const labelId = `table-checkbox-${index}`;
+                
+                return (
+                  <TableRow
+                    hover
+                    role="checkbox"
+                    aria-checked={isItemSelected}
+                    tabIndex={-1}
+                    key={String(row[idField])}
+                    selected={isItemSelected}
+                    onClick={() => onRowClick && onRowClick(row)}
+                    sx={{ cursor: onRowClick ? 'pointer' : 'default' }}
+                  >
+                    {/* Checkbox cell */}
+                    {selectable && (
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          checked={isItemSelected}
+                          onClick={(event) => handleClick(event, row[idField])}
+                          inputProps={{ 'aria-labelledby': labelId }}
+                        />
+                      </TableCell>
+                    )}
+                    
+                    {/* Data cells */}
+                    {columns.map((column) => {
+                      const value = getCellValue(row, column.id);
+                      
+                      return (
+                        <TableCell
+                          key={`${String(row[idField])}-${String(column.id)}`}
+                          align={column.align || 'left'}
+                        >
+                          {column.format ? column.format(value, row) : value}
+                        </TableCell>
+                      );
+                    })}
+                    
+                    {/* Actions cell */}
+                    {showActionsColumn && !columns.some((col) => col.id === 'actions') && (
+                      <TableCell align="right">
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          {/* View action */}
+                          {actions.view && (
+                            <Tooltip title="Bekijken">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onViewClick && onViewClick(row);
+                                }}
+                              >
+                                <Visibility fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          
+                          {/* Edit action */}
+                          {actions.edit && (
+                            <Tooltip title="Bewerken">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEditClick && onEditClick(row);
+                                }}
+                              >
+                                <Edit fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          
+                          {/* Delete action */}
+                          {actions.delete && (
+                            <Tooltip title="Verwijderen">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeleteClick && onDeleteClick(row);
+                                }}
+                              >
+                                <Delete fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          
+                          {/* Custom actions */}
+                          {actions.custom &&
+                            actions.custom.map((action, i) => (
+                              <Tooltip key={i} title={action.tooltip}>
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    action.onClick(row);
+                                  }}
+                                >
+                                  {action.icon}
+                                </IconButton>
+                              </Tooltip>
+                            ))}
+                          
+                          {/* More actions menu */}
+                          {(actions.download || actions.share) && (
+                            <>
+                              <Tooltip title="Meer acties">
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => handleActionMenuOpen(e, row)}
+                                >
+                                  <MoreVert fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </>
+                          )}
+                        </Box>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={
+                    columns.length + (selectable ? 1 : 0) + (showActionsColumn ? 1 : 0)
+                  }
+                  align="center"
+                >
+                  <Box sx={{ py: 3 }}>
+                    <Typography variant="body1" color="text.secondary">
+                      {searchTerm ? 'Geen zoekresultaten gevonden' : emptyStateMessage}
+                    </Typography>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      
+      {/* Action menu */}
+      <Menu
+        anchorEl={actionMenuAnchorEl}
+        open={Boolean(actionMenuAnchorEl)}
+        onClose={handleActionMenuClose}
+      >
+        {actions.download && (
+          <MenuItem onClick={() => handleActionClick('download')}>
+            <Download fontSize="small" sx={{ mr: 1 }} />
+            Downloaden
+          </MenuItem>
+        )}
+        {actions.share && (
+          <MenuItem onClick={() => handleActionClick('share')}>
+            <Share fontSize="small" sx={{ mr: 1 }} />
+            Delen
+          </MenuItem>
+        )}
+      </Menu>
+      
+      {/* Pagination */}
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25, 50]}
+        component="div"
+        count={filteredData.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        labelRowsPerPage="Rijen per pagina:"
+        labelDisplayedRows={({ from, to, count }) => `${from}-${to} van ${count}`}
+      />
+    </Paper>
+  );
+}
+
+export default DataTable;

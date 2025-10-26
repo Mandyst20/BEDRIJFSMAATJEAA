@@ -1,0 +1,435 @@
+import React, { useState, useEffect } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { styled, useTheme } from '@mui/material/styles';
+import {
+  Box,
+  Drawer,
+  AppBar,
+  Toolbar,
+  List,
+  Typography,
+  Divider,
+  IconButton,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Avatar,
+  Menu,
+  MenuItem,
+  Badge,
+  useMediaQuery,
+  Tooltip,
+  CircularProgress,
+} from '@mui/material';
+import {
+  Menu as MenuIcon,
+  ChevronLeft as ChevronLeftIcon,
+  Dashboard as DashboardIcon,
+  Person as PersonIcon,
+  Settings as SettingsIcon,
+  CreditCard as CreditCardIcon,
+  Description as DescriptionIcon,
+  Task as TaskIcon,
+  Group as GroupIcon,
+  Analytics as AnalyticsIcon,
+  Logout as LogoutIcon,
+  Notifications as NotificationsIcon,
+  Help as HelpIcon,
+  LightMode as LightModeIcon,
+  DarkMode as DarkModeIcon,
+  Language as LanguageIcon,
+  Extension as ExtensionIcon,
+} from '@mui/icons-material';
+import { useAppDispatch, useAppSelector } from '../store';
+import { logout } from '../store/slices/authSlice';
+import { selectUser } from '../store/slices/userSlice';
+import { toggleThemeMode, selectUiThemeMode } from '../store/slices/uiSlice';
+import { toast } from 'react-toastify';
+import Logo from '../components/common/Logo';
+
+const drawerWidth = 260;
+
+const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
+  open?: boolean;
+}>(({ theme, open }) => ({
+  flexGrow: 1,
+  padding: theme.spacing(3),
+  transition: theme.transitions.create('margin', {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  marginLeft: `-${drawerWidth}px`,
+  ...(open && {
+    transition: theme.transitions.create('margin', {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+    marginLeft: 0,
+  }),
+}));
+
+const AppBarStyled = styled(AppBar, {
+  shouldForwardProp: (prop) => prop !== 'open',
+})<{ open?: boolean }>(({ theme, open }) => ({
+  transition: theme.transitions.create(['margin', 'width'], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    width: `calc(100% - ${drawerWidth}px)`,
+    marginLeft: `${drawerWidth}px`,
+    transition: theme.transitions.create(['margin', 'width'], {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
+}));
+
+const DrawerHeader = styled('div')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  padding: theme.spacing(0, 1),
+  ...theme.mixins.toolbar,
+  justifyContent: 'flex-end',
+}));
+
+interface NavItem {
+  title: string;
+  path: string;
+  icon: React.ReactNode;
+  badge?: number;
+}
+
+const DashboardLayout: React.FC = () => {
+  const theme = useTheme();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
+  const user = useAppSelector(selectUser);
+  const themeMode = useAppSelector(selectUiThemeMode);
+  
+  const [open, setOpen] = useState(!isMobile);
+  const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
+  const [anchorElNotifications, setAnchorElNotifications] = useState<null | HTMLElement>(null);
+  const [loading, setLoading] = useState(false);
+  
+  // Close drawer on mobile when route changes
+  useEffect(() => {
+    if (isMobile) {
+      setOpen(false);
+    }
+  }, [location.pathname, isMobile]);
+  
+  // Adjust drawer state based on screen size
+  useEffect(() => {
+    setOpen(!isMobile);
+  }, [isMobile]);
+  
+  const handleDrawerOpen = () => {
+    setOpen(true);
+  };
+  
+  const handleDrawerClose = () => {
+    setOpen(false);
+  };
+  
+  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorElUser(event.currentTarget);
+  };
+  
+  const handleCloseUserMenu = () => {
+    setAnchorElUser(null);
+  };
+  
+  const handleOpenNotificationsMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorElNotifications(event.currentTarget);
+  };
+  
+  const handleCloseNotificationsMenu = () => {
+    setAnchorElNotifications(null);
+  };
+  
+  const handleLogout = async () => {
+    setLoading(true);
+    try {
+      await dispatch(logout()).unwrap();
+      navigate('/login');
+      toast.success('Je bent succesvol uitgelogd!');
+    } catch (error) {
+      toast.error('Er is een fout opgetreden bij het uitloggen.');
+    } finally {
+      setLoading(false);
+      handleCloseUserMenu();
+    }
+  };
+  
+  const handleThemeToggle = () => {
+    dispatch(toggleThemeMode());
+    handleCloseUserMenu();
+  };
+  
+  const navItems: NavItem[] = [
+    { title: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
+    { title: 'Documenten', path: '/documents', icon: <DescriptionIcon />, badge: 3 },
+    { title: 'Taken', path: '/tasks', icon: <TaskIcon />, badge: 5 },
+    { title: 'Team', path: '/team', icon: <GroupIcon /> },
+    { title: 'Integraties', path: '/integrations', icon: <ExtensionIcon /> },
+    { title: 'Analyses', path: '/analytics', icon: <AnalyticsIcon /> },
+  ];
+  
+  const bottomNavItems: NavItem[] = [
+    { title: 'Profiel', path: '/profile', icon: <PersonIcon /> },
+    { title: 'Abonnement', path: '/subscription', icon: <CreditCardIcon /> },
+    { title: 'Instellingen', path: '/settings', icon: <SettingsIcon /> },
+    { title: 'Help', path: '/help', icon: <HelpIcon /> },
+  ];
+  
+  return (
+    <Box sx={{ display: 'flex' }}>
+      <AppBarStyled position="fixed" open={open} elevation={1}>
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            onClick={handleDrawerOpen}
+            edge="start"
+            sx={{ mr: 2, ...(open && { display: 'none' }) }}
+          >
+            <MenuIcon />
+          </IconButton>
+          
+          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
+            <Typography variant="h6" noWrap component="div">
+              {navItems.find((item) => item.path === location.pathname)?.title || 
+               bottomNavItems.find((item) => item.path === location.pathname)?.title || 
+               'Dashboard'}
+            </Typography>
+          </Box>
+          
+          {/* Notifications */}
+          <Box sx={{ flexGrow: 0, mr: 2 }}>
+            <Tooltip title="Notificaties">
+              <IconButton onClick={handleOpenNotificationsMenu} color="inherit">
+                <Badge badgeContent={3} color="error">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+            <Menu
+              sx={{ mt: '45px' }}
+              id="notifications-menu"
+              anchorEl={anchorElNotifications}
+              anchorOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              open={Boolean(anchorElNotifications)}
+              onClose={handleCloseNotificationsMenu}
+            >
+              <MenuItem onClick={handleCloseNotificationsMenu}>
+                <Typography textAlign="center">Nieuwe taak toegewezen</Typography>
+              </MenuItem>
+              <MenuItem onClick={handleCloseNotificationsMenu}>
+                <Typography textAlign="center">Document goedgekeurd</Typography>
+              </MenuItem>
+              <MenuItem onClick={handleCloseNotificationsMenu}>
+                <Typography textAlign="center">Abonnement verloopt binnenkort</Typography>
+              </MenuItem>
+            </Menu>
+          </Box>
+          
+          {/* User Menu */}
+          <Box sx={{ flexGrow: 0 }}>
+            <Tooltip title="Open instellingen">
+              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                <Avatar 
+                  alt={user?.name} 
+                  src={user?.avatar || undefined} 
+                  sx={{ 
+                    bgcolor: user?.avatar ? 'transparent' : theme.palette.primary.main 
+                  }}
+                >
+                  {!user?.avatar && user?.name?.charAt(0)}
+                </Avatar>
+              </IconButton>
+            </Tooltip>
+            <Menu
+              sx={{ mt: '45px' }}
+              id="menu-appbar"
+              anchorEl={anchorElUser}
+              anchorOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              open={Boolean(anchorElUser)}
+              onClose={handleCloseUserMenu}
+            >
+              <MenuItem onClick={() => { handleCloseUserMenu(); navigate('/profile'); }}>
+                <ListItemIcon>
+                  <PersonIcon fontSize="small" />
+                </ListItemIcon>
+                <Typography textAlign="center">Profiel</Typography>
+              </MenuItem>
+              <MenuItem onClick={() => { handleCloseUserMenu(); navigate('/settings'); }}>
+                <ListItemIcon>
+                  <SettingsIcon fontSize="small" />
+                </ListItemIcon>
+                <Typography textAlign="center">Instellingen</Typography>
+              </MenuItem>
+              <MenuItem onClick={handleThemeToggle}>
+                <ListItemIcon>
+                  {themeMode === 'dark' ? (
+                    <LightModeIcon fontSize="small" />
+                  ) : (
+                    <DarkModeIcon fontSize="small" />
+                  )}
+                </ListItemIcon>
+                <Typography textAlign="center">
+                  {themeMode === 'dark' ? 'Licht thema' : 'Donker thema'}
+                </Typography>
+              </MenuItem>
+              <MenuItem onClick={() => { handleCloseUserMenu(); }}>
+                <ListItemIcon>
+                  <LanguageIcon fontSize="small" />
+                </ListItemIcon>
+                <Typography textAlign="center">Nederlands</Typography>
+              </MenuItem>
+              <Divider />
+              <MenuItem onClick={handleLogout} disabled={loading}>
+                <ListItemIcon>
+                  {loading ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    <LogoutIcon fontSize="small" />
+                  )}
+                </ListItemIcon>
+                <Typography textAlign="center">Uitloggen</Typography>
+              </MenuItem>
+            </Menu>
+          </Box>
+        </Toolbar>
+      </AppBarStyled>
+      
+      <Drawer
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+          },
+        }}
+        variant={isMobile ? 'temporary' : 'persistent'}
+        anchor="left"
+        open={open}
+        onClose={handleDrawerClose}
+      >
+        <DrawerHeader>
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', pl: 1 }}>
+            <Logo height={40} />
+            <Typography variant="h6" sx={{ ml: 1, fontWeight: 'bold' }}>
+              Bedrijfsmaatje
+            </Typography>
+          </Box>
+          <IconButton onClick={handleDrawerClose}>
+            <ChevronLeftIcon />
+          </IconButton>
+        </DrawerHeader>
+        
+        <Divider />
+        
+        {/* Main navigation */}
+        <List>
+          {navItems.map((item) => (
+            <ListItem key={item.path} disablePadding>
+              <ListItemButton
+                selected={location.pathname === item.path}
+                onClick={() => navigate(item.path)}
+              >
+                <ListItemIcon>
+                  {item.badge ? (
+                    <Badge badgeContent={item.badge} color="error">
+                      {item.icon}
+                    </Badge>
+                  ) : (
+                    item.icon
+                  )}
+                </ListItemIcon>
+                <ListItemText primary={item.title} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        
+        <Box sx={{ flexGrow: 1 }} />
+        
+        <Divider />
+        
+        {/* Bottom navigation */}
+        <List>
+          {bottomNavItems.map((item) => (
+            <ListItem key={item.path} disablePadding>
+              <ListItemButton
+                selected={location.pathname === item.path}
+                onClick={() => navigate(item.path)}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.title} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        
+        {/* User info at bottom */}
+        {user && (
+          <>
+            <Divider />
+            <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
+              <Avatar 
+                alt={user.name} 
+                src={user.avatar || undefined} 
+                sx={{ 
+                  width: 32, 
+                  height: 32,
+                  bgcolor: user.avatar ? 'transparent' : theme.palette.primary.main 
+                }}
+              >
+                {!user.avatar && user.name.charAt(0)}
+              </Avatar>
+              <Box sx={{ ml: 1.5, overflow: 'hidden' }}>
+                <Typography variant="subtitle2" noWrap>
+                  {user.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" noWrap>
+                  {user.company}
+                </Typography>
+              </Box>
+            </Box>
+          </>
+        )}
+      </Drawer>
+      
+      <Main open={open}>
+        <DrawerHeader />
+        <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+          <Outlet />
+        </Box>
+      </Main>
+    </Box>
+  );
+};
+
+export default DashboardLayout;

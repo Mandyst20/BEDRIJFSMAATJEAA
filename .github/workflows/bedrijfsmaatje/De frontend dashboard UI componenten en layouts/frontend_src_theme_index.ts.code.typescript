@@ -1,0 +1,228 @@
+import { createTheme, responsiveFontSizes } from '@mui/material/styles';
+import { nlNL } from '@mui/material/locale';
+
+// Define types for theme modes
+export type ThemeMode = 'light' | 'dark' | 'system';
+
+// Define colors
+const primaryColor = {
+  main: '#2563eb', // Blue
+  light: '#60a5fa',
+  dark: '#1d4ed8',
+  contrastText: '#ffffff',
+};
+
+const secondaryColor = {
+  main: '#10b981', // Green
+  light: '#34d399',
+  dark: '#059669',
+  contrastText: '#ffffff',
+};
+
+// Create theme based on mode
+export const getTheme = (mode: ThemeMode) => {
+  // Determine actual mode if set to system
+  const actualMode = mode === 'system'
+    ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+    : mode;
+  
+  const baseTheme = createTheme(
+    {
+      palette: {
+        mode: actualMode === 'dark' ? 'dark' : 'light',
+        primary: primaryColor,
+        secondary: secondaryColor,
+        background: {
+          default: actualMode === 'dark' ? '#121212' : '#f9fafb',
+          paper: actualMode === 'dark' ? '#1e1e1e' : '#ffffff',
+        },
+        error: {
+          main: '#ef4444',
+        },
+        warning: {
+          main: '#f59e0b',
+        },
+        info: {
+          main: '#3b82f6',
+        },
+        success: {
+          main: '#10b981',
+        },
+        text: {
+          primary: actualMode === 'dark' ? '#f3f4f6' : '#111827',
+          secondary: actualMode === 'dark' ? '#9ca3af' : '#6b7280',
+        },
+        divider: actualMode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+      },
+      typography: {
+        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+        h1: {
+          fontWeight: 700,
+        },
+        h2: {
+          fontWeight: 700,
+        },
+        h3: {
+          fontWeight: 600,
+        },
+        h4: {
+          fontWeight: 600,
+        },
+        h5: {
+          fontWeight: 600,
+        },
+        h6: {
+          fontWeight: 600,
+        },
+        subtitle1: {
+          fontWeight: 500,
+        },
+        subtitle2: {
+          fontWeight: 500,
+        },
+        button: {
+          fontWeight: 600,
+          textTransform: 'none',
+        },
+      },
+      shape: {
+        borderRadius: 8,
+      },
+      components: {
+        MuiButton: {
+          styleOverrides: {
+            root: {
+              borderRadius: 8,
+              padding: '8px 16px',
+              boxShadow: 'none',
+              '&:hover': {
+                boxShadow: 'none',
+              },
+            },
+            containedPrimary: {
+              '&:hover': {
+                backgroundColor: primaryColor.dark,
+              },
+            },
+            containedSecondary: {
+              '&:hover': {
+                backgroundColor: secondaryColor.dark,
+              },
+            },
+            outlined: {
+              borderWidth: 2,
+              '&:hover': {
+                borderWidth: 2,
+              },
+            },
+          },
+        },
+        MuiCard: {
+          styleOverrides: {
+            root: {
+              borderRadius: 12,
+              boxShadow: actualMode === 'dark' 
+                ? '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1)'
+                : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            },
+          },
+        },
+        MuiPaper: {
+          styleOverrides: {
+            rounded: {
+              borderRadius: 12,
+            },
+            elevation1: {
+              boxShadow: actualMode === 'dark'
+                ? '0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2)'
+                : '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+            },
+            elevation2: {
+              boxShadow: actualMode === 'dark'
+                ? '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)'
+                : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            },
+          },
+        },
+        MuiTableHead: {
+          styleOverrides: {
+            root: {
+              backgroundColor: actualMode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+              '& .MuiTableCell-root': {
+                fontWeight: 600,
+              },
+            },
+          },
+        },
+        MuiTableCell: {
+          styleOverrides: {
+            root: {
+              borderBottom: actualMode === 'dark'
+                ? '1px solid rgba(255, 255, 255, 0.12)'
+                : '1px solid rgba(0, 0, 0, 0.12)',
+            },
+          },
+        },
+        MuiListItemButton: {
+          styleOverrides: {
+            root: {
+              borderRadius: 8,
+              margin: '4px 8px',
+              '&.Mui-selected': {
+                backgroundColor: actualMode === 'dark'
+                  ? 'rgba(37, 99, 235, 0.2)'
+                  : 'rgba(37, 99, 235, 0.1)',
+                '&:hover': {
+                  backgroundColor: actualMode === 'dark'
+                    ? 'rgba(37, 99, 235, 0.3)'
+                    : 'rgba(37, 99, 235, 0.2)',
+                },
+              },
+            },
+          },
+        },
+        MuiAppBar: {
+          styleOverrides: {
+            root: {
+              backgroundColor: actualMode === 'dark' ? '#1e1e1e' : '#ffffff',
+              color: actualMode === 'dark' ? '#f3f4f6' : '#111827',
+            },
+          },
+        },
+        MuiDrawer: {
+          styleOverrides: {
+            paper: {
+              backgroundColor: actualMode === 'dark' ? '#1e1e1e' : '#ffffff',
+              borderRight: actualMode === 'dark'
+                ? '1px solid rgba(255, 255, 255, 0.12)'
+                : '1px solid rgba(0, 0, 0, 0.12)',
+            },
+          },
+        },
+        MuiDivider: {
+          styleOverrides: {
+            root: {
+              borderColor: actualMode === 'dark'
+                ? 'rgba(255, 255, 255, 0.12)'
+                : 'rgba(0, 0, 0, 0.12)',
+            },
+          },
+        },
+        MuiTextField: {
+          styleOverrides: {
+            root: {
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 8,
+              },
+            },
+          },
+        },
+      },
+    },
+    nlNL // Dutch locale
+  );
+  
+  return responsiveFontSizes(baseTheme);
+};

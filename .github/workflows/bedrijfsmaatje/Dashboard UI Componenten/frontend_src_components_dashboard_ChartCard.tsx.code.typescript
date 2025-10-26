@@ -1,0 +1,124 @@
+import React from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  CardHeader,
+  IconButton,
+  Menu,
+  MenuItem,
+  Typography,
+  useTheme,
+} from '@mui/material';
+import { MoreVert, FileDownload, Refresh } from '@mui/icons-material';
+
+interface ChartCardProps {
+  title: string;
+  subheader?: string;
+  children: React.ReactNode;
+  height?: number | string;
+  onRefresh?: () => void;
+  onDownload?: () => void;
+  onPeriodChange?: (period: 'day' | 'week' | 'month' | 'year' | 'all') => void;
+}
+
+const ChartCard: React.FC<ChartCardProps> = ({
+  title,
+  subheader,
+  children,
+  height = 300,
+  onRefresh,
+  onDownload,
+  onPeriodChange,
+}) => {
+  const theme = useTheme();
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+  
+  const handlePeriodChange = (period: 'day' | 'week' | 'month' | 'year' | 'all') => {
+    if (onPeriodChange) {
+      onPeriodChange(period);
+    }
+    handleMenuClose();
+  };
+  
+  return (
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <CardHeader
+        title={
+          <Typography variant="h6" component="div">
+            {title}
+          </Typography>
+        }
+        subheader={subheader && <Typography variant="body2" color="text.secondary">{subheader}</Typography>}
+        action={
+          <>
+            {onRefresh && (
+              <IconButton
+                size="small"
+                onClick={onRefresh}
+                sx={{ mr: 1 }}
+                aria-label="refresh"
+              >
+                <Refresh fontSize="small" />
+              </IconButton>
+            )}
+            <IconButton
+              size="small"
+              onClick={handleMenuOpen}
+              aria-label="chart options"
+            >
+              <MoreVert fontSize="small" />
+            </IconButton>
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+              {onPeriodChange && (
+                <>
+                  <MenuItem onClick={() => handlePeriodChange('day')}>Vandaag</MenuItem>
+                  <MenuItem onClick={() => handlePeriodChange('week')}>Deze week</MenuItem>
+                  <MenuItem onClick={() => handlePeriodChange('month')}>Deze maand</MenuItem>
+                  <MenuItem onClick={() => handlePeriodChange('year')}>Dit jaar</MenuItem>
+                  <MenuItem onClick={() => handlePeriodChange('all')}>Alle tijd</MenuItem>
+                  <MenuItem divider />
+                </>
+              )}
+              {onDownload && (
+                <MenuItem onClick={() => { onDownload(); handleMenuClose(); }}>
+                  <FileDownload fontSize="small" sx={{ mr: 1 }} />
+                  Downloaden
+                </MenuItem>
+              )}
+            </Menu>
+          </>
+        }
+      />
+      <CardContent
+        sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          height: typeof height === 'number' ? `${height}px` : height,
+          '&:last-child': {
+            paddingBottom: 2,
+          },
+        }}
+      >
+        {children}
+      </CardContent>
+    </Card>
+  );
+};
+
+export default ChartCard;

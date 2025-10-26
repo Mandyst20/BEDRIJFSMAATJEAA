@@ -1,0 +1,312 @@
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import axios from 'axios';
+import { RootState } from '../index';
+import api from '../../utils/api';
+
+// Types
+export interface UserAddress {
+  street: string;
+  number: string;
+  postalCode: string;
+  city: string;
+  country: string;
+}
+
+export interface UserPreferences {
+  language: 'nl' | 'en';
+  notifications: {
+    email: boolean;
+    app: boolean;
+    sms: boolean;
+  };
+  dashboardModules: string[];
+  theme: 'light' | 'dark' | 'system';
+}
+
+export interface TeamMember {
+  _id?: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'editor' | 'viewer';
+  invitedAt: string;
+  status: 'pending' | 'active' | 'declined';
+}
+
+export interface Integration {
+  service: string;
+  connected: boolean;
+  metadata?: Record<string, string>;
+}
+
+export interface User {
+  _id: string;
+  name: string;
+  email: string;
+  company: string;
+  phone?: string;
+  role: 'user' | 'manager' | 'admin' | 'super_admin';
+  industry: string;
+  companySize: string;
+  subscriptionStatus: 'trial' | 'active' | 'past_due' | 'canceled' | 'none';
+  subscriptionId: string | null;
+  trialEnds?: string;
+  isEmailVerified: boolean;
+  lastLogin?: string;
+  avatar?: string;
+  address?: UserAddress;
+  kvk?: string;
+  btw?: string;
+  iban?: string;
+  preferences: UserPreferences;
+  team?: TeamMember[];
+  integrations?: Integration[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface UserState {
+  data: User | null;
+  loading: boolean;
+  error: string | null;
+  updating: boolean;
+  updateError: string | null;
+}
+
+// Initial state
+const initialState: UserState = {
+  data: null,
+  loading: false,
+  error: null,
+  updating: false,
+  updateError: null,
+};
+
+// Async thunks
+export const fetchCurrentUser = createAsyncThunk<
+  { success: boolean; data: { user: User } },
+  void,
+  { rejectValue: string }
+>('user/fetchCurrentUser', async (_, { rejectWithValue }) => {
+  try {
+    const response = await api.get('/auth/me');
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      return rejectWithValue(
+        error.response.data.error?.message || 'Gebruikersgegevens ophalen mislukt'
+      );
+    }
+    return rejectWithValue('Er is een fout opgetreden bij het ophalen van gebruikersgegevens');
+  }
+});
+
+export const updateUserProfile = createAsyncThunk<
+  { success: boolean; data: User },
+  Partial<User>,
+  { rejectValue: string }
+>('user/updateUserProfile', async (userData, { rejectWithValue }) => {
+  try {
+    const response = await api.put('/users/profile', userData);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      return rejectWithValue(
+        error.response.data.error?.message || 'Profiel bijwerken mislukt'
+      );
+    }
+    return rejectWithValue('Er is een fout opgetreden bij het bijwerken van het profiel');
+  }
+});
+
+export const updateUserPreferences = createAsyncThunk<
+  { success: boolean; data: User },
+  UserPreferences,
+  { rejectValue: string }
+>('user/updateUserPreferences', async (preferences, { rejectWithValue }) => {
+  try {
+    const response = await api.put('/users/preferences', { preferences });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      return rejectWithValue(
+        error.response.data.error?.message || 'Voorkeuren bijwerken mislukt'
+      );
+    }
+    return rejectWithValue('Er is een fout opgetreden bij het bijwerken van de voorkeuren');
+  }
+});
+
+export const updatePassword = createAsyncThunk<
+  { success: boolean; message: string },
+  { currentPassword: string; newPassword: string },
+  { rejectValue: string }
+>('user/updatePassword', async (passwordData, { rejectWithValue }) => {
+  try {
+    const response = await api.put('/auth/updatepassword', passwordData);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      return rejectWithValue(
+        error.response.data.error?.message || 'Wachtwoord bijwerken mislukt'
+      );
+    }
+    return rejectWithValue('Er is een fout opgetreden bij het bijwerken van het wachtwoord');
+  }
+});
+
+export const inviteTeamMember = createAsyncThunk<
+  { success: boolean; data: User },
+  { email: string; name: string; role: 'admin' | 'editor' | 'viewer' },
+  { rejectValue: string }
+>('user/inviteTeamMember', async (teamMemberData, { rejectWithValue }) => {
+  try {
+    const response = await api.post('/users/team/invite', teamMemberData);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      return rejectWithValue(
+        error.response.data.error?.message || 'Teamlid uitnodigen mislukt'
+      );
+    }
+    return rejectWithValue('Er is een fout opgetreden bij het uitnodigen van een teamlid');
+  }
+});
+
+export const removeTeamMember = createAsyncThunk<
+  { success: boolean; data: User },
+  string, // Team member ID
+  { rejectValue: string }
+>('user/removeTeamMember', async (teamMemberId, { rejectWithValue }) => {
+  try {
+    const response = await api.delete(`/users/team/${teamMemberId}`);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      return rejectWithValue(
+        error.response.data.error?.message || 'Teamlid verwijderen mislukt'
+      );
+    }
+    return rejectWithValue('Er is een fout opgetreden bij het verwijderen van een teamlid');
+  }
+});
+
+export const uploadAvatar = createAsyncThunk<
+  { success: boolean; data: { avatarUrl: string } },
+  File,
+  { rejectValue: string }
+>('user/uploadAvatar', async (file, { rejectWithValue }) => {
+  try {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    const response = await api.post('/users/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      return rejectWithValue(
+        error.response.data.error?.message || 'Avatar uploaden mislukt'
+      );
+    }
+    return rejectWithValue('Er is een fout opgetreden bij het uploaden van de avatar');
+  }
+});
+
+// User slice
+const userSlice = createSlice({
+  name: 'user',
+  initialState,
+  reducers: {
+    setUser: (state, action: PayloadAction<User | null>) => {
+      state.data = action.payload;
+    },
+    clearUserError: (state) => {
+      state.error = null;
+      state.updateError = null;
+    },
+  },
+  extraReducers: (builder) => {
+    // Fetch current user
+    builder.addCase(fetchCurrentUser.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(fetchCurrentUser.fulfilled, (state, action) => {
+      state.loading = false;
+      state.data = action.payload.data.user;
+    });
+    builder.addCase(fetchCurrentUser.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload || 'Gebruikersgegevens ophalen mislukt';
+    });
+    
+    // Update user profile
+    builder.addCase(updateUserProfile.pending, (state) => {
+      state.updating = true;
+      state.updateError = null;
+    });
+    builder.addCase(updateUserProfile.fulfilled, (state, action) => {
+      state.updating = false;
+      state.data = action.payload.data;
+    });
+    builder.addCase(updateUserProfile.rejected, (state, action) => {
+      state.updating = false;
+      state.updateError = action.payload || 'Profiel bijwerken mislukt';
+    });
+    
+    // Update user preferences
+    builder.addCase(updateUserPreferences.pending, (state) => {
+      state.updating = true;
+      state.updateError = null;
+    });
+    builder.addCase(updateUserPreferences.fulfilled, (state, action) => {
+      state.updating = false;
+      state.data = action.payload.data;
+    });
+    builder.addCase(updateUserPreferences.rejected, (state, action) => {
+      state.updating = false;
+      state.updateError = action.payload || 'Voorkeuren bijwerken mislukt';
+    });
+    
+    // Invite team member
+    builder.addCase(inviteTeamMember.fulfilled, (state, action) => {
+      state.data = action.payload.data;
+    });
+    
+    // Remove team member
+    builder.addCase(removeTeamMember.fulfilled, (state, action) => {
+      state.data = action.payload.data;
+    });
+    
+    // Upload avatar
+    builder.addCase(uploadAvatar.pending, (state) => {
+      state.updating = true;
+    });
+    builder.addCase(uploadAvatar.fulfilled, (state, action) => {
+      state.updating = false;
+      if (state.data) {
+        state.data.avatar = action.payload.data.avatarUrl;
+      }
+    });
+    builder.addCase(uploadAvatar.rejected, (state, action) => {
+      state.updating = false;
+      state.updateError = action.payload || 'Avatar uploaden mislukt';
+    });
+  },
+});
+
+// Actions
+export const { setUser, clearUserError } = userSlice.actions;
+
+// Selectors
+export const selectUser = (state: RootState) => state.user.data;
+export const selectUserLoading = (state: RootState) => state.user.loading;
+export const selectUserError = (state: RootState) => state.user.error;
+export const selectUserUpdating = (state: RootState) => state.user.updating;
+export const selectUserUpdateError = (state: RootState) => state.user.updateError;
+
+export default userSlice.reducer;

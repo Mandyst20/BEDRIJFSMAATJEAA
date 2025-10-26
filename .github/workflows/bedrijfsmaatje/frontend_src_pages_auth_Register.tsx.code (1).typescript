@@ -1,0 +1,556 @@
+import React, { useState } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  TextField,
+  Link,
+  Grid,
+  Typography,
+  Container,
+  InputAdornment,
+  IconButton,
+  Alert,
+  Paper,
+  Stepper,
+  Step,
+  StepLabel,
+  FormControlLabel,
+  Checkbox,
+  MenuItem,
+} from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import {
+  Visibility,
+  VisibilityOff,
+  Email,
+  Lock,
+  Person,
+  Business,
+  Phone,
+  ArrowBack,
+  ArrowForward,
+} from '@mui/icons-material';
+import * as Yup from 'yup';
+import { Formik, Form, Field, FieldProps } from 'formik';
+import { useDispatch } from 'react-redux';
+import { register } from '../../store/slices/authSlice';
+import Logo from '../../components/common/Logo';
+import AuthLayout from '../../layouts/AuthLayout';
+
+interface AccountFormValues {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  acceptTerms: boolean;
+}
+
+interface ProfileFormValues {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  companyName: string;
+  kvkNumber: string;
+  industry: string;
+}
+
+type RegisterFormValues = AccountFormValues & ProfileFormValues;
+
+const industries = [
+  { value: 'retail', label: 'Detailhandel' },
+  { value: 'hospitality', label: 'Horeca' },
+  { value: 'construction', label: 'Bouw' },
+  { value: 'healthcare', label: 'Gezondheidszorg' },
+  { value: 'education', label: 'Onderwijs' },
+  { value: 'it', label: 'IT & Software' },
+  { value: 'finance', label: 'Financiële dienstverlening' },
+  { value: 'manufacturing', label: 'Productie' },
+  { value: 'transportation', label: 'Transport & Logistiek' },
+  { value: 'agriculture', label: 'Landbouw' },
+  { value: 'other', label: 'Overig' },
+];
+
+const Register: React.FC = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [activeStep, setActiveStep] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
+
+  const steps = ['Account aanmaken', 'Persoonlijke gegevens', 'Bedrijfsgegevens'];
+
+  const initialValues: RegisterFormValues = {
+    email: '',
+    password: '',
+    confirmPassword: '',
+    acceptTerms: false,
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+    companyName: '',
+    kvkNumber: '',
+    industry: '',
+  };
+
+  const accountValidationSchema = Yup.object({
+    email: Yup.string()
+      .email('Ongeldig e-mailadres')
+      .required('E-mailadres is verplicht'),
+    password: Yup.string()
+      .min(8, 'Wachtwoord moet minimaal 8 tekens bevatten')
+      .matches(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+        'Wachtwoord moet minimaal één hoofdletter, één kleine letter, één cijfer en één speciaal teken bevatten'
+      )
+      .required('Wachtwoord is verplicht'),
+    confirmPassword: Yup.string()
+      .oneOf([Yup.ref('password')], 'Wachtwoorden komen niet overeen')
+      .required('Bevestig je wachtwoord'),
+    acceptTerms: Yup.boolean()
+      .oneOf([true], 'Je moet akkoord gaan met de algemene voorwaarden')
+      .required('Je moet akkoord gaan met de algemene voorwaarden'),
+  });
+
+  const profileValidationSchema = Yup.object({
+    firstName: Yup.string().required('Voornaam is verplicht'),
+    lastName: Yup.string().required('Achternaam is verplicht'),
+    phoneNumber: Yup.string().required('Telefoonnummer is verplicht'),
+  });
+
+  const companyValidationSchema = Yup.object({
+    companyName: Yup.string().required('Bedrijfsnaam is verplicht'),
+    kvkNumber: Yup.string().required('KVK-nummer is verplicht'),
+    industry: Yup.string().required('Branche is verplicht'),
+  });
+
+  const getValidationSchema = (step: number) => {
+    switch (step) {
+      case 0:
+        return accountValidationSchema;
+      case 1:
+        return profileValidationSchema;
+      case 2:
+        return companyValidationSchema;
+      default:
+        return Yup.object({});
+    }
+  };
+
+  const handleNext = async (values: RegisterFormValues, { setSubmitting, setTouched }: any) => {
+    try {
+      // Validate current step
+      await getValidationSchema(activeStep).validate(values, { abortEarly: false });
+      
+      if (activeStep === steps.length - 1) {
+        // Final step - submit the form
+        await handleSubmit(values, { setSubmitting });
+      } else {
+        // Move to next step
+        setActiveStep((prevStep) => prevStep + 1);
+        // Reset touched fields for the next step
+        setTouched({});
+      }
+    } catch (error) {
+      // Validation errors are handled by Formik
+      setSubmitting(false);
+    }
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevStep) => prevStep - 1);
+  };
+
+  const handleSubmit = async (values: RegisterFormValues, { setSubmitting }: any) => {
+    try {
+      setRegisterError(null);
+      // Dispatch register action
+      await dispatch(register({
+        email: values.email,
+        password: values.password,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        phoneNumber: values.phoneNumber,
+        companyName: values.companyName,
+        kvkNumber: values.kvkNumber,
+        industry: values.industry,
+      }) as any);
+      
+      // Redirect to dashboard on successful registration
+      navigate('/dashboard');
+    } catch (error: any) {
+      setRegisterError(error.message || 'Registratie mislukt. Probeer het opnieuw.');
+      setSubmitting(false);
+    }
+  };
+
+  const handleTogglePasswordVisibility = (field: 'password' | 'confirmPassword') => {
+    if (field === 'password') {
+      setShowPassword((prev) => !prev);
+    } else {
+      setShowConfirmPassword((prev) => !prev);
+    }
+  };
+
+  const renderStepContent = (step: number, formikProps: any) => {
+    const { touched, errors, values, handleChange, handleBlur } = formikProps;
+    
+    switch (step) {
+      case 0:
+        return (
+          <>
+            <Field name="email">
+              {({ field }: FieldProps) => (
+                <TextField
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  id="email"
+                  label="E-mailadres"
+                  autoComplete="email"
+                  autoFocus
+                  error={touched.email && Boolean(errors.email)}
+                  helperText={touched.email && errors.email}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Email color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            </Field>
+
+            <Field name="password">
+              {({ field }: FieldProps) => (
+                <TextField
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  label="Wachtwoord"
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  autoComplete="new-password"
+                  error={touched.password && Boolean(errors.password)}
+                  helperText={touched.password && errors.password}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Lock color="action" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => handleTogglePasswordVisibility('password')}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            </Field>
+
+            <Field name="confirmPassword">
+              {({ field }: FieldProps) => (
+                <TextField
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  label="Bevestig wachtwoord"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  id="confirmPassword"
+                  autoComplete="new-password"
+                  error={touched.confirmPassword && Boolean(errors.confirmPassword)}
+                  helperText={touched.confirmPassword && errors.confirmPassword}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Lock color="action" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => handleTogglePasswordVisibility('confirmPassword')}
+                          edge="end"
+                        >
+                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            </Field>
+
+            <Field name="acceptTerms">
+              {({ field }: FieldProps) => (
+                <FormControlLabel
+                  control={
+                    <Checkbox 
+                      {...field} 
+                      color="primary" 
+                      checked={field.value} 
+                    />
+                  }
+                  label={
+                    <Typography variant="body2">
+                      Ik ga akkoord met de{' '}
+                      <Link component={RouterLink} to="/terms" variant="body2">
+                        algemene voorwaarden
+                      </Link>{' '}
+                      en{' '}
+                      <Link component={RouterLink} to="/privacy" variant="body2">
+                        privacybeleid
+                      </Link>
+                    </Typography>
+                  }
+                  sx={{ mt: 2 }}
+                />
+              )}
+            </Field>
+            {touched.acceptTerms && errors.acceptTerms && (
+              <Typography color="error" variant="caption">
+                {errors.acceptTerms}
+              </Typography>
+            )}
+          </>
+        );
+      
+      case 1:
+        return (
+          <>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Field name="firstName">
+                  {({ field }: FieldProps) => (
+                    <TextField
+                      {...field}
+                      margin="normal"
+                      fullWidth
+                      id="firstName"
+                      label="Voornaam"
+                      autoComplete="given-name"
+                      autoFocus
+                      error={touched.firstName && Boolean(errors.firstName)}
+                      helperText={touched.firstName && errors.firstName}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Person color="action" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  )}
+                </Field>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Field name="lastName">
+                  {({ field }: FieldProps) => (
+                    <TextField
+                      {...field}
+                      margin="normal"
+                      fullWidth
+                      id="lastName"
+                      label="Achternaam"
+                      autoComplete="family-name"
+                      error={touched.lastName && Boolean(errors.lastName)}
+                      helperText={touched.lastName && errors.lastName}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Person color="action" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  )}
+                </Field>
+              </Grid>
+            </Grid>
+
+            <Field name="phoneNumber">
+              {({ field }: FieldProps) => (
+                <TextField
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  id="phoneNumber"
+                  label="Telefoonnummer"
+                  autoComplete="tel"
+                  error={touched.phoneNumber && Boolean(errors.phoneNumber)}
+                  helperText={touched.phoneNumber && errors.phoneNumber}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Phone color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            </Field>
+          </>
+        );
+      
+      case 2:
+        return (
+          <>
+            <Field name="companyName">
+              {({ field }: FieldProps) => (
+                <TextField
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  id="companyName"
+                  label="Bedrijfsnaam"
+                  autoComplete="organization"
+                  autoFocus
+                  error={touched.companyName && Boolean(errors.companyName)}
+                  helperText={touched.companyName && errors.companyName}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Business color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            </Field>
+
+            <Field name="kvkNumber">
+              {({ field }: FieldProps) => (
+                <TextField
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  id="kvkNumber"
+                  label="KVK-nummer"
+                  error={touched.kvkNumber && Boolean(errors.kvkNumber)}
+                  helperText={touched.kvkNumber && errors.kvkNumber}
+                />
+              )}
+            </Field>
+
+            <Field name="industry">
+              {({ field }: FieldProps) => (
+                <TextField
+                  select
+                  {...field}
+                  margin="normal"
+                  fullWidth
+                  id="industry"
+                  label="Branche"
+                  error={touched.industry && Boolean(errors.industry)}
+                  helperText={touched.industry && errors.industry}
+                >
+                  {industries.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            </Field>
+          </>
+        );
+      
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <AuthLayout>
+      <Container component="main" maxWidth="sm">
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            borderRadius: 2,
+          }}
+        >
+          <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Logo height={60} />
+            <Typography component="h1" variant="h5" sx={{ mt: 2 }}>
+              Registreren bij Bedrijfsmaatje
+            </Typography>
+          </Box>
+
+          <Stepper activeStep={activeStep} sx={{ width: '100%', mb: 4 }} alternativeLabel>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+
+          {registerError && (
+            <Alert severity="error" sx={{ width: '100%', mb: 3 }}>
+              {registerError}
+            </Alert>
+          )}
+
+          <Formik
+            initialValues={initialValues}
+            validationSchema={getValidationSchema(activeStep)}
+            onSubmit={handleNext}
+            validateOnChange={false}
+            validateOnBlur={true}
+          >
+            {(formikProps) => (
+              <Form style={{ width: '100%' }}>
+                {renderStepContent(activeStep, formikProps)}
+
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+                  <Button
+                    disabled={activeStep === 0}
+                    onClick={handleBack}
+                    startIcon={<ArrowBack />}
+                  >
+                    Terug
+                  </Button>
+                  <LoadingButton
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    loading={formikProps.isSubmitting}
+                    endIcon={activeStep === steps.length - 1 ? undefined : <ArrowForward />}
+                  >
+                    {activeStep === steps.length - 1 ? 'Registreren' : 'Volgende'}
+                  </LoadingButton>
+                </Box>
+              </Form>
+            )}
+          </Formik>
+        </Paper>
+
+        <Box mt={3} textAlign="center">
+          <Typography variant="body2" color="text.secondary">
+            Heb je al een account?{' '}
+            <Link component={RouterLink} to="/auth/login" variant="body2">
+              Log in
+            </Link>
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            © {new Date().getFullYear()} Bedrijfsmaatje. Alle rechten voorbehouden.
+          </Typography>
+        </Box>
+      </Container>
+    </AuthLayout>
+  );
+};
+
+export default Register;

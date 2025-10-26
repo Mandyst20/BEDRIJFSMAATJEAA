@@ -1,0 +1,78 @@
+import React, { useState } from 'react';
+import { Formik, Form, Field, FieldProps, FormikHelpers } from 'formik';
+import * as Yup from 'yup';
+import {
+  Box,
+  Button,
+  TextField,
+  MenuItem,
+  FormControl,
+  FormLabel,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  Checkbox,
+  Switch,
+  InputAdornment,
+  FormHelperText,
+  Grid,
+  Typography,
+  Divider,
+  CircularProgress,
+  Autocomplete,
+  Chip,
+} from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { nl } from 'date-fns/locale';
+
+// Field types
+export type FieldType =
+  | 'text'
+  | 'email'
+  | 'password'
+  | 'number'
+  | 'select'
+  | 'multiselect'
+  | 'radio'
+  | 'checkbox'
+  | 'switch'
+  | 'textarea'
+  | 'date'
+  | 'time'
+  | 'datetime'
+  | 'file'
+  | 'hidden'
+  | 'divider'
+  | 'heading';
+
+// Option type for select, multiselect, radio fields
+export interface FieldOption {
+  value: string | number | boolean;
+  label: string;
+  disabled?: boolean;
+}
+
+// Field definition
+export interface FormField {
+  name: string;
+  label?: string;
+  type: FieldType;
+  placeholder?: string;
+  helperText?: string;
+  required?: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
+  options?: FieldOption[];
+  multiline?: boolean;
+  rows?: number;
+  startAdornment?: React.ReactNode;
+  endAdornment?: React.ReactNode;
+  min?: number;
+  max?: number;
+  step?: number;
+  validation?: any;
+  width?: 1 | 2 | 3 | 4 | 5 | 

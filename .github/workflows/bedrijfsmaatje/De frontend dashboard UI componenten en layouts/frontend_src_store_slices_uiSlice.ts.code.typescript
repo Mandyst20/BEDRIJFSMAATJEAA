@@ -1,0 +1,28 @@
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { RootState } from '../index';
+import { ThemeMode } from '../../theme';
+
+interface UiState {
+  themeMode: ThemeMode;
+  sidebarOpen: boolean;
+  dashboardLayout: string[];
+  notifications: {
+    unread: number;
+    showBadge: boolean;
+  };
+  language: 'nl' | 'en';
+}
+
+const initialState: UiState = {
+  themeMode: 'light',
+  sidebarOpen: true,
+  dashboardLayout: [
+    'overview',
+    'tasks',
+    'documents',
+    'calendar',
+    'analytics',
+  ],
+  notifications: {
+    unread: 0,
+    showB
